@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -20,7 +21,8 @@ type Command struct {
 // Run command.
 func (r *Command) Run() (err error) {
 	addon.Activity(
-		"[CMD] Running: %s %s",
+		"[CMD] uid:%d Running: %s %s",
+		os.Getuid(),
 		r.Path,
 		strings.Join(r.Options, " "))
 	cmd := exec.Command(r.Path, r.Options...)
