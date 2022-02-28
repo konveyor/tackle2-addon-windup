@@ -1,7 +1,8 @@
 package main
 
 import (
-	"bytes"
+	"errors"
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -12,8 +13,6 @@ type Command struct {
 	Path    string
 	Dir     string
 	Options Options
-	Out     bytes.Buffer
-	Err     bytes.Buffer
 }
 
 //
@@ -25,11 +24,16 @@ func (r *Command) Run() (err error) {
 		strings.Join(r.Options, " "))
 	cmd := exec.Command(r.Path, r.Options...)
 	cmd.Dir = r.Dir
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err = cmd.Run()
+	b, err := cmd.CombinedOutput()
+	exitErr := &exec.ExitError{}
+	if errors.As(err, &exitErr) {
+		output := string(b)
+		for _, line := range strings.Split(output, "\n") {
+			addon.Activity(
+				"> %s",
+				line)
+		}
+	}
 	return
 }
 
@@ -42,4 +46,10 @@ type Options []string
 func (a *Options) add(option string, s ...string) {
 	*a = append(*a, option)
 	*a = append(*a, s...)
+}
+
+//
+// add
+func (a *Options) addf(option string, x ...interface{}) {
+	*a = append(*a, fmt.Sprintf(option, x...))
 }

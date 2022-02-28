@@ -8,7 +8,7 @@ curl -X POST ${host}/tasks -d \
     "locator": "windup",
     "addon": "windup",
     "data": {
-      "application": 3
-      ,"checkpoint": {"done":10}
+      "application": 100,
+      "targets": ["cloud-readiness"]
     }
 }' | jq -M .
