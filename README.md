@@ -23,7 +23,8 @@ Task data.
     packages: {
       included: [str,]
       excluded: [str,]
-    },
+    }
+  },
   rules*: {
     directory: {
       bucket: int
