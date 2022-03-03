@@ -10,24 +10,24 @@ Task data.
 {
   application: int,
   mode: {
-    binary: bool
-    withDeps: bool
+    binary: bool,
+    withDeps: bool,
     artifact* {
-      bucket: int
+      bucket: int,
       path:   str
     }
   },
   targets: [str,],
   scope: {
-    withKnown: bool
+    withKnown: bool,
     packages: {
-      included: [str,]
+      included: [str,],
       excluded: [str,]
     }
   },
   rules*: {
     directory: {
-      bucket: int
+      bucket: int,
       path:   str
     },
     tags: {
