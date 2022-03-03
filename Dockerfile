@@ -10,12 +10,13 @@ RUN echo -e "[centos8]" \
  "\nbaseurl = http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/" \
  "\nenabled = 1" \
  "\ngpgcheck = 0" > /etc/yum.repos.d/centos.repo
-RUN microdnf -y install wget git subversion \
+RUN microdnf -y install wget git subversion maven \
  && microdnf -y clean all
 RUN wget -qO /opt/windup.zip https://repo1.maven.org/maven2/org/jboss/windup/mta-cli/5.2.1.Final/mta-cli-5.2.1.Final-offline.zip \
  && unzip /opt/windup.zip -d /opt \
  && rm /opt/windup.zip \
- && ln -s /opt/mta-cli-5.2.1.Final/bin/mta-cli /opt/windup  
+ && ln -s /opt/mta-cli-5.2.1.Final/bin/mta-cli /opt/windup \
+ && chmod 777 /home/jboss
 COPY --from=builder /opt/app-root/src/bin/addon /usr/local/bin/addon
 USER jboss
 ENTRYPOINT ["/usr/local/bin/addon"]

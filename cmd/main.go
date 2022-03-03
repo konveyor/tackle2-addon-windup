@@ -5,62 +5,36 @@ import (
 	hub "github.com/konveyor/tackle2-hub/addon"
 	"github.com/konveyor/tackle2-hub/api"
 	"os"
-	"strings"
-	"time"
 )
 
 var (
 	// hub integration.
 	addon = hub.Addon
+	// HomeDir directory.
+	HomeDir = ""
+	Dir     = ""
 )
 
-const (
-	DefaultTarget = "cloud-readiness"
-)
-
-//
-// Checkpoint mapping.
-type Checkpoint = map[string]time.Duration
-
-//
-// Artifact uploaded.
-type Artifact struct {
-	Bucket uint   `json:"bucket" binding:"required"`
-	Path   string `json:"path" binding:"required"`
+func init() {
+	HomeDir, _ = os.UserHomeDir()
+	Dir, _ = os.Getwd()
 }
 
 //
 // Data Addon data passed in the secret.
 type Data struct {
-	Application  uint       `json:"application" binding:"required"`
-	Binary       bool       `json:"binary"`
-	Dependencies bool       `json:"dependencies"`
-	Targets      []string   `json:"targets"`
-	Packages     []string   `json:"packages"`
-	Artifact     *Artifact  `json:"artifact"`
-	Checkpoint   Checkpoint `json:"checkpoint"`
-}
-
-//
-// validate settings.
-// Default settings not specified.
-func (d *Data) validate() (err error) {
-	if d.Application == 0 {
-		err = errors.New("Application not specified.")
-		return
-	}
-	if len(d.Targets) == 0 {
-		d.Targets = []string{DefaultTarget}
-	}
-
-	return
+	Application uint `json:"application" binding:"required"`
+	//
+	Mode    Mode    `json:"mode"`
+	Targets Targets `json:"targets"`
+	Scope   Scope   `json:"scope"`
+	Rules   *Rules  `json:"rules"`
 }
 
 //
 // main
 func main() {
 	addon.Run(func() (err error) {
-		windup := Windup{}
 		//
 		// Get the addon data associated with the task.
 		d := &Data{}
@@ -68,20 +42,8 @@ func main() {
 		if err != nil {
 			return
 		}
-		//
-		// Debugging.
-		checkpoint(d, "started")
-		defer func() {
-			checkpoint(d, "done")
-		}()
-
-		addon.Activity("Working in: %s", cwd())
-		//
-		// Validate the addon data.
-		err = d.validate()
-		if err != nil {
-			return
-		}
+		windup := Windup{}
+		windup.Data = d
 		//
 		// Fetch application.
 		addon.Activity("Fetching application.")
@@ -91,23 +53,31 @@ func main() {
 		}
 		//
 		// Fetch repository.
-		if !d.Binary {
+		if !d.Mode.Binary {
 			addon.Total(2)
 			if application.Repository == nil {
 				err = errors.New("Application repository not defined.")
 				return
 			}
 			var r Repository
-			r, err = newRepository(application.Repository)
+			r, err = newRepository(application)
 			if err != nil {
 				return
 			}
-			err = r.Fetch("git")
+			err = r.Fetch()
 			if err == nil {
 				addon.Increment()
-				windup.repository = r
+				windup.Mode.Repository = r
 			} else {
 				return
+			}
+			if d.Mode.WithDeps {
+				mvn := Maven{}
+				mvn.application = application
+				err = mvn.Fetch()
+				if err != nil {
+					return
+				}
 			}
 		}
 		//
@@ -133,22 +103,6 @@ func main() {
 }
 
 //
-// Checkpoint for container inspection.
-func checkpoint(d *Data, name string) {
-	duration, found := d.Checkpoint[name]
-	if !found {
-		return
-	}
-	m := time.Minute * duration
-	addon.Activity(
-		"[Debug] paused at: %s for: %v",
-		strings.ToUpper(name),
-		m)
-	time.Sleep(m)
-	addon.Activity("[Debug] Resumed.")
-}
-
-//
 // ensureBucket to store windup report.
 func ensureBucket(d *Data) (bucket *api.Bucket, err error) {
 	bucket, err = addon.Bucket.Ensure(d.Application, "Windup")
@@ -156,12 +110,5 @@ func ensureBucket(d *Data) (bucket *api.Bucket, err error) {
 		return
 	}
 	err = addon.Bucket.Purge(bucket)
-	return
-}
-
-//
-// cwd
-func cwd() (path string) {
-	path, _ = os.Getwd()
 	return
 }
