@@ -26,6 +26,7 @@ type Data struct {
 	Application uint `json:"application" binding:"required"`
 	//
 	Mode    Mode    `json:"mode"`
+	Sources Sources `json:"sources"`
 	Targets Targets `json:"targets"`
 	Scope   Scope   `json:"scope"`
 	Rules   *Rules  `json:"rules"`

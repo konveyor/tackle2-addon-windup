@@ -17,6 +17,7 @@ Task data.
       path:   str
     }
   },
+  sources: [str,],
   targets: [str,],
   scope: {
     withKnown: bool,
