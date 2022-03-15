@@ -1,20 +1,28 @@
 package main
 
 import (
-	"github.com/konveyor/tackle2-hub/api"
-	"path"
+	"os"
+	pathlib "path"
 )
 
 //
 // Windup application analyzer.
 type Windup struct {
 	*Data
-	bucket *api.Bucket
+	bucket string
 }
 
 //
 // Run windup.
 func (r *Windup) Run() (err error) {
+	err = os.RemoveAll(r.output())
+	if err != nil {
+		return
+	}
+	err = os.Mkdir(r.output(), 0777)
+	if err != nil {
+		return
+	}
 	cmd := Command{Path: "/opt/windup"}
 	cmd.Options, err = r.options()
 	if err != nil {
@@ -25,12 +33,20 @@ func (r *Windup) Run() (err error) {
 }
 
 //
+// output returns output directory.
+func (r *Windup) output() string {
+	return pathlib.Join(
+		r.bucket,
+		r.Output)
+}
+
+//
 // options builds CLL options.
 func (r *Windup) options() (options Options, err error) {
 	options = Options{
 		"--batchMode",
 		"--output",
-		r.bucket.Path,
+		r.output(),
 	}
 	err = r.Mode.AddOptions(&options)
 	if err != nil {
@@ -62,18 +78,11 @@ func (r *Windup) options() (options Options, err error) {
 }
 
 //
-// BucketPath path relative to a bucket.
-type BucketPath struct {
-	Bucket uint   `json:"bucket" binding:"required"`
-	Path   string `json:"path" binding:"required"`
-}
-
-//
 // Mode settings.
 type Mode struct {
-	Binary     bool        `json:"binary"`
-	Artifact   *BucketPath `json:"artifact"`
-	WithDeps   bool        `json:"withDeps"`
+	Binary     bool   `json:"binary"`
+	Artifact   string `json:"artifact"`
+	WithDeps   bool   `json:"withDeps"`
 	Repository Repository
 }
 
@@ -139,7 +148,7 @@ func (r *Scope) AddOptions(options *Options) (err error) {
 //
 // Rules settings.
 type Rules struct {
-	Directory *BucketPath `json:"directory"`
+	Directory string `json:"directory" binding:"required"`
 	Tags      struct {
 		Included []string `json:"included"`
 		Excluded []string `json:"excluded"`
@@ -149,15 +158,9 @@ type Rules struct {
 //
 // AddOptions adds windup options.
 func (r *Rules) AddOptions(options *Options) (err error) {
-	bucket, bErr := addon.Bucket.Get(r.Directory.Bucket)
-	if bErr != nil {
-		return
-	}
 	options.add(
 		"--userRulesDirectory",
-		path.Join(
-			bucket.Path,
-			r.Directory.Path))
+		r.Directory)
 	if len(r.Tags.Included) > 0 {
 		options.add("--includeTags", r.Tags.Included...)
 	}

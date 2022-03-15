@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	hub "github.com/konveyor/tackle2-hub/addon"
-	"github.com/konveyor/tackle2-hub/api"
 	"os"
 )
 
@@ -23,13 +22,18 @@ func init() {
 //
 // Data Addon data passed in the secret.
 type Data struct {
-	Application uint `json:"application" binding:"required"`
-	//
-	Mode    Mode    `json:"mode"`
+	// Output directory within application bucket.
+	Output string `json:"output" binding:"required"`
+	// Mode options.
+	Mode Mode `json:"mode"`
+	// Sources list.
 	Sources Sources `json:"sources"`
+	// Targets list.
 	Targets Targets `json:"targets"`
-	Scope   Scope   `json:"scope"`
-	Rules   *Rules  `json:"rules"`
+	// Scope options.
+	Scope Scope `json:"scope"`
+	// Rules options.
+	Rules *Rules `json:"rules"`
 }
 
 //
@@ -48,8 +52,10 @@ func main() {
 		//
 		// Fetch application.
 		addon.Activity("Fetching application.")
-		application, err := addon.Application.Get(d.Application)
-		if err != nil {
+		application, err := addon.Task.Application()
+		if err == nil {
+			windup.bucket = application.Bucket
+		} else {
 			return
 		}
 		//
@@ -82,16 +88,6 @@ func main() {
 			}
 		}
 		//
-		// Create the bucket.
-		addon.Activity("Ensure bucket (Windup).")
-		bucket, err := ensureBucket(d)
-		if err == nil {
-			addon.Activity("Using bucket id:%d at:%s.", bucket.ID, bucket.Path)
-			windup.bucket = bucket
-		} else {
-			return
-		}
-		//
 		// Run windup.
 		err = windup.Run()
 		if err == nil {
@@ -101,15 +97,4 @@ func main() {
 		}
 		return
 	})
-}
-
-//
-// ensureBucket to store windup report.
-func ensureBucket(d *Data) (bucket *api.Bucket, err error) {
-	bucket, err = addon.Bucket.Ensure(d.Application, "Windup")
-	if err != nil {
-		return
-	}
-	err = addon.Bucket.Purge(bucket)
-	return
 }
