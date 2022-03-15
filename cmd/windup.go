@@ -89,11 +89,14 @@ type Mode struct {
 //
 // AddOptions adds windup options.
 func (r *Mode) AddOptions(options *Options) (err error) {
-	if r.Repository == nil {
-		return
+	if r.Binary {
+		binDir := pathlib.Join(addon.Task.Bucket(), r.Artifact)
+		options.add("--input", binDir)
+	} else {
+		options.add("--input", SourceDir)
+		options.add("--sourceMode")
 	}
-	options.add("--input", SourceDir)
-	options.add("--sourceMode")
+
 	return
 }
 
@@ -160,7 +163,9 @@ type Rules struct {
 func (r *Rules) AddOptions(options *Options) (err error) {
 	options.add(
 		"--userRulesDirectory",
-		r.Directory)
+		pathlib.Join(
+			addon.Task.Bucket(),
+			r.Directory))
 	if len(r.Tags.Included) > 0 {
 		options.add("--includeTags", r.Tags.Included...)
 	}
