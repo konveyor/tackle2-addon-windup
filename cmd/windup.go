@@ -36,6 +36,12 @@ func (r *Windup) options() (options Options, err error) {
 	if err != nil {
 		return
 	}
+	if r.Sources != nil {
+		err = r.Sources.AddOptions(&options)
+		if err != nil {
+			return
+		}
+	}
 	if r.Targets != nil {
 		err = r.Targets.AddOptions(&options)
 		if err != nil {
@@ -79,6 +85,19 @@ func (r *Mode) AddOptions(options *Options) (err error) {
 	}
 	options.add("--input", SourceDir)
 	options.add("--sourceMode")
+	return
+}
+
+//
+// Sources list of sources.
+type Sources []string
+
+//
+// AddOptions add options.
+func (r Sources) AddOptions(options *Options) (err error) {
+	for _, source := range r {
+		options.add("--source", source)
+	}
 	return
 }
 
