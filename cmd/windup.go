@@ -151,8 +151,8 @@ func (r *Scope) AddOptions(options *Options) (err error) {
 //
 // Rules settings.
 type Rules struct {
-	Directory string `json:"directory" binding:"required"`
-	Tags      struct {
+	Path string `json:"path" binding:"required"`
+	Tags struct {
 		Included []string `json:"included"`
 		Excluded []string `json:"excluded"`
 	} `json:"tags"`
@@ -165,7 +165,7 @@ func (r *Rules) AddOptions(options *Options) (err error) {
 		"--userRulesDirectory",
 		pathlib.Join(
 			addon.Task.Bucket(),
-			r.Directory))
+			r.Path))
 	if len(r.Tags.Included) > 0 {
 		options.add("--includeTags", r.Tags.Included...)
 	}

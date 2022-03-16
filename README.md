@@ -25,7 +25,7 @@ Task data.
     }
   },
   rules*: {
-    directory: 
+    path: str, 
     tags: {
       included: [str,],
       excluded: [str,]
