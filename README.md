@@ -11,7 +11,6 @@ Task data.
 
 ```
 {
-  application: int,
   output: string,
   mode: {
     binary: bool,
