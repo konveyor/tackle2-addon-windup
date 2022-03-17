@@ -90,7 +90,7 @@ func (r *Maven) run(options Options) (err error) {
 //
 // writeSettings writes settings file.
 func (r *Maven) writeSettings() (path string, err error) {
-	id, found, err := addon.Application.FindIdentity(r.application.ID, "mvn")
+	id, found, err := addon.Application.FindIdentity(r.application.ID, "maven")
 	if err != nil {
 		return
 	}

@@ -20,7 +20,7 @@ func (r *Git) Fetch() (err error) {
 	repository := r.application.Repository
 	addon.Activity("[GIT] Cloning: %s", repository.URL)
 	_ = os.RemoveAll(SourceDir)
-	id, hasCreds, err := addon.Application.FindIdentity(r.application.ID, "scm")
+	id, hasCreds, err := addon.Application.FindIdentity(r.application.ID, "source")
 	if err != nil {
 		return
 	}
