@@ -9,13 +9,11 @@ Task data.
 ```
 {
   application: int,
+  output: string,
   mode: {
     binary: bool,
     withDeps: bool,
-    artifact* {
-      bucket: int,
-      path:   str
-    }
+    artifact: string,
   },
   sources: [str,],
   targets: [str,],
@@ -27,10 +25,7 @@ Task data.
     }
   },
   rules*: {
-    directory: {
-      bucket: int,
-      path:   str
-    },
+    path: str, 
     tags: {
       included: [str,],
       excluded: [str,]
