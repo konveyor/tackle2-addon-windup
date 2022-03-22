@@ -19,7 +19,7 @@ func (r *Windup) Run() (err error) {
 	if err != nil {
 		return
 	}
-	err = os.Mkdir(r.output(), 0777)
+	err = os.MkdirAll(r.output(), 0777)
 	if err != nil {
 		return
 	}
