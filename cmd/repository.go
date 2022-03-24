@@ -29,7 +29,8 @@ func newRepository(a *api.Application) (rp Repository, err error) {
 	}
 	switch kind {
 	case "git":
-		rp = &Git{application: a}
+		rp = &Git{Application: a}
+		err = rp.Validate()
 	case "svn":
 	case "mvn":
 	default:
@@ -43,4 +44,5 @@ func newRepository(a *api.Application) (rp Repository, err error) {
 // Repository interface.
 type Repository interface {
 	Fetch() (err error)
+	Validate() (err error)
 }

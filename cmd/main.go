@@ -80,7 +80,7 @@ func main() {
 			}
 			if d.Mode.WithDeps {
 				mvn := Maven{}
-				mvn.application = application
+				mvn.Application = application
 				err = mvn.Fetch()
 				if err != nil {
 					return
