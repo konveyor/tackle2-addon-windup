@@ -56,7 +56,8 @@ func (r *Maven) Fetch() (err error) {
 
 //
 // FetchArtifact fetches an artifact.
-func (r *Maven) FetchArtifact(artifact string) (err error) {
+func (r *Maven) FetchArtifact() (err error) {
+	artifact := r.Application.Binary
 	addon.Activity("[MVN] Fetch artifact %s.", artifact)
 	options := Options{
 		"dependency:copy",
