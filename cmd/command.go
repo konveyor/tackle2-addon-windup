@@ -16,7 +16,9 @@ type Command struct {
 }
 
 //
-// Run command.
+// Run executes the command.
+// The command and output are both reported in
+// task Report.Activity.
 func (r *Command) Run() (err error) {
 	addon.Activity(
 		"[CMD] Running: %s %s",
@@ -34,6 +36,17 @@ func (r *Command) Run() (err error) {
 				line)
 		}
 	}
+
+	return
+}
+
+//
+// RunSilent executes the command.
+// Nothing reported in task Report.Activity.
+func (r *Command) RunSilent() (err error) {
+	cmd := exec.Command(r.Path, r.Options...)
+	cmd.Dir = r.Dir
+	err = cmd.Run()
 	return
 }
 

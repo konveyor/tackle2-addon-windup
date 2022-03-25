@@ -12,7 +12,7 @@ import (
 //
 // Git repository.
 type Git struct {
-	Application *api.Application
+	SCM
 }
 
 //
@@ -43,23 +43,24 @@ func (r *Git) Fetch() (err error) {
 	url := r.URL()
 	addon.Activity("[GIT] Cloning: %s", url.String())
 	_ = os.RemoveAll(SourceDir)
-	id, hasCreds, err := addon.Application.FindIdentity(r.Application.ID, "source")
+	id, found, err := addon.Application.FindIdentity(r.Application.ID, "source")
 	if err != nil {
 		return
+	}
+	if !found {
+		id = &api.Identity{}
 	}
 	err = r.writeConfig()
 	if err != nil {
 		return
 	}
-	if hasCreds {
-		err = r.writeCreds(id)
-		if err != nil {
-			return
-		}
-		err = r.writeSSH(id)
-		if err != nil {
-			return
-		}
+	err = r.writeCreds(id)
+	if err != nil {
+		return
+	}
+	err = r.WriteKey(id)
+	if err != nil {
+		return
 	}
 	cmd := Command{Path: "/usr/bin/git"}
 	cmd.Options.add("clone", url.String(), SourceDir)
@@ -77,7 +78,7 @@ func (r *Git) URL() (u *urllib.URL) {
 //
 // writeConfig writes config file.
 func (r *Git) writeConfig() (err error) {
-	path := pathlib.Join(HomeDir, ".gitconfig")
+	path := pathlib.Join(r.HomeDir, ".gitconfig")
 	_, err = os.Stat(path)
 	if !errors.Is(err, os.ErrNotExist) {
 		err = os.ErrExist
@@ -110,7 +111,10 @@ func (r *Git) writeConfig() (err error) {
 //
 // writeCreds writes credentials (store) file.
 func (r *Git) writeCreds(id *api.Identity) (err error) {
-	path := pathlib.Join(HomeDir, ".git-credentials")
+	if id.User == "" || id.Password == "" {
+		return
+	}
+	path := pathlib.Join(r.HomeDir, ".git-credentials")
 	_, err = os.Stat(path)
 	if !errors.Is(err, os.ErrNotExist) {
 		err = os.ErrExist
@@ -133,36 +137,6 @@ func (r *Git) writeCreds(id *api.Identity) (err error) {
 	}
 	entry += url.Host
 	_, err = f.Write([]byte(entry + "\n"))
-	_ = f.Close()
-	return
-}
-
-//
-// writeSSH writes the SSH key.
-func (r *Git) writeSSH(id *api.Identity) (err error) {
-	if id.Key == "" {
-		return
-	}
-	dir := pathlib.Join(HomeDir, ".ssh")
-	err = os.Mkdir(dir, 0700)
-	if err != nil {
-		if errors.Is(err, os.ErrExist) {
-			err = nil
-		} else {
-			return
-		}
-	}
-	path := pathlib.Join(dir, "id_git")
-	_, err = os.Stat(path)
-	if !errors.Is(err, os.ErrNotExist) {
-		err = os.ErrExist
-		return
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		return
-	}
-	_, err = f.Write([]byte(id.Key))
 	_ = f.Close()
 	return
 }
