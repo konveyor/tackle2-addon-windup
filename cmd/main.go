@@ -67,7 +67,7 @@ func main() {
 				return
 			}
 			var r Repository
-			r, err = newRepository(application)
+			r, err = newRepository(HomeDir, application)
 			if err != nil {
 				return
 			}
@@ -80,7 +80,7 @@ func main() {
 			}
 			if d.Mode.WithDeps {
 				mvn := Maven{}
-				mvn.application = application
+				mvn.Application = application
 				err = mvn.Fetch()
 				if err != nil {
 					return

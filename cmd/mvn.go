@@ -36,7 +36,7 @@ func init() {
 //
 // Maven repository.
 type Maven struct {
-	application *api.Application
+	Application *api.Application
 	path        string
 }
 
@@ -90,7 +90,7 @@ func (r *Maven) run(options Options) (err error) {
 //
 // writeSettings writes settings file.
 func (r *Maven) writeSettings() (path string, err error) {
-	id, found, err := addon.Application.FindIdentity(r.application.ID, "maven")
+	id, found, err := addon.Application.FindIdentity(r.Application.ID, "maven")
 	if err != nil {
 		return
 	}
