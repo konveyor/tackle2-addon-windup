@@ -86,6 +86,15 @@ func main() {
 					return
 				}
 			}
+		} else {
+			if d.Mode.Artifact == "" {
+				mvn := Maven{}
+				mvn.Application = application
+				err = mvn.FetchArtifact()
+				if err != nil {
+					return
+				}
+			}
 		}
 		//
 		// Run windup.

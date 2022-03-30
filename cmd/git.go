@@ -65,6 +65,10 @@ func (r *Git) Fetch() (err error) {
 	cmd := Command{Path: "/usr/bin/git"}
 	cmd.Options.add("clone", url.String(), SourceDir)
 	err = cmd.Run()
+	if err != nil {
+		return
+	}
+	err = r.checkout()
 	return
 }
 
@@ -187,5 +191,23 @@ func (r *Git) proxy() (proxy string, err error) {
 			proxy,
 			p.Port)
 	}
+	return
+}
+
+//
+// checkout ref.
+func (r *Git) checkout() (err error) {
+	branch := r.Application.Repository.Branch
+	if branch == "" {
+		return
+	}
+	dir, _ := os.Getwd()
+	defer func() {
+		_ = os.Chdir(dir)
+	}()
+	_ = os.Chdir(SourceDir)
+	cmd := Command{Path: "/usr/bin/git"}
+	cmd.Options.add("checkout", branch)
+	err = cmd.Run()
 	return
 }

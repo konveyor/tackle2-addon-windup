@@ -90,8 +90,10 @@ type Mode struct {
 // AddOptions adds windup options.
 func (r *Mode) AddOptions(options *Options) (err error) {
 	if r.Binary {
-		binDir := pathlib.Join(addon.Task.Bucket(), r.Artifact)
-		options.add("--input", binDir)
+		if r.Artifact != "" {
+			binDir := pathlib.Join(addon.Task.Bucket(), r.Artifact)
+			options.add("--input", binDir)
+		}
 	} else {
 		options.add("--input", SourceDir)
 		options.add("--sourceMode")

@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/clbanning/mxj"
 	"github.com/konveyor/tackle2-hub/api"
 	"os"
 	pathlib "path"
@@ -56,7 +57,8 @@ func (r *Maven) Fetch() (err error) {
 
 //
 // FetchArtifact fetches an artifact.
-func (r *Maven) FetchArtifact(artifact string) (err error) {
+func (r *Maven) FetchArtifact() (err error) {
+	artifact := r.Application.Binary
 	addon.Activity("[MVN] Fetch artifact %s.", artifact)
 	options := Options{
 		"dependency:copy",
@@ -107,7 +109,58 @@ func (r *Maven) writeSettings() (path string, err error) {
 	if err != nil {
 		return
 	}
-	_, err = f.Write([]byte(id.Settings))
+	settings := id.Settings
+	settings, err = r.injectProxy(id)
+	if err != nil {
+		return
+	}
+	_, err = f.Write([]byte(settings))
 	_ = f.Close()
+	return
+}
+
+//
+// injectProxy injects proxy settings.
+func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
+	m, err := mxj.NewMapXml([]byte(id.Settings))
+	if err != nil {
+		return
+	}
+	proxies, err := addon.Proxy.List()
+	if err != nil {
+		return
+	}
+	pList := []interface{}{}
+	for _, p := range proxies {
+		mp := mxj.Map{
+			"id":       p.Kind,
+			"active":   p.Enabled,
+			"protocol": p.Kind,
+			"host":     p.Host,
+			"port":     p.Port,
+		}
+		if p.Identity != nil {
+			pid, idErr := addon.Identity.Get(p.Identity.ID)
+			if idErr != nil {
+				err = idErr
+				return
+			}
+			mp["username"] = pid.User
+			mp["password"] = pid.Password
+		}
+		pList = append(pList, mp)
+	}
+	v, err := m.ValuesForPath("settings.proxies.proxy")
+	if err != nil {
+		return
+	}
+	err = m.SetValueForPath(
+		mxj.Map{"proxy": append(v, pList...)},
+		"settings.proxies")
+	if err != nil {
+		return
+	}
+	b, err := m.XmlIndent("", "  ")
+	s = string(b)
 	return
 }
