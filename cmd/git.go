@@ -207,7 +207,7 @@ func (r *Git) checkout() (err error) {
 	}()
 	_ = os.Chdir(SourceDir)
 	cmd := Command{Path: "/usr/bin/git"}
-	cmd.Options.add("chcekout", branch)
+	cmd.Options.add("checkout", branch)
 	err = cmd.Run()
 	return
 }

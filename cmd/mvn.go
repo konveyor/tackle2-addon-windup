@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/xml"
 	"errors"
+	"github.com/clbanning/mxj"
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/model"
 	"os"
 	pathlib "path"
 )
@@ -108,7 +111,63 @@ func (r *Maven) writeSettings() (path string, err error) {
 	if err != nil {
 		return
 	}
-	_, err = f.Write([]byte(id.Settings))
+	settings := id.Settings
+	settings, err = r.injectProxy(id)
+	if err != nil {
+		return
+	}
+	_, err = f.Write([]byte(settings))
 	_ = f.Close()
 	return
+}
+
+//
+// injectProxy injects proxy settings.
+func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
+	document, err := mxj.NewMapXml([]byte(id.Settings))
+	if err != nil {
+		return
+	}
+	document = document["settings"].(model.Map)
+	proxies, err := addon.Proxy.List()
+	if err != nil {
+		return
+	}
+	pList := []MavenProxy{}
+	for _, p := range proxies {
+		mp := MavenProxy{
+			ID:       p.Kind,
+			Active:   p.Enabled,
+			Protocol: p.Kind,
+			Host:     p.Host,
+			Port:     p.Port,
+		}
+		if p.Identity != nil {
+			pid, idErr := addon.Identity.Get(p.Identity.ID)
+			if idErr != nil {
+				err = idErr
+				return
+			}
+			mp.User = pid.User
+			mp.Password = pid.Password
+		}
+		pList = append(pList, mp)
+	}
+	document["proxies"] = mxj.Map{"proxies": pList}
+	b, err := document.XmlIndent("", "  ", "settings")
+	s = string(b)
+	return
+}
+
+//
+// MavenProxy
+type MavenProxy struct {
+	XMLName  xml.Name `xml:"proxy"`
+	ID       string   `xml:"id"`
+	Active   bool     `xml:"active"`
+	Protocol string   `xml:"protocol"`
+	Host     string   `xml:"host"`
+	Port     int      `xml:"port,omitempty"`
+	User     string   `xml:"username,omitempty"`
+	Password string   `xml:"password,omitempty"`
 }
