@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/xml"
 	"errors"
 	"github.com/clbanning/mxj"
 	"github.com/konveyor/tackle2-hub/api"
-	"github.com/konveyor/tackle2-hub/model"
 	"os"
 	pathlib "path"
 )
@@ -124,23 +122,22 @@ func (r *Maven) writeSettings() (path string, err error) {
 //
 // injectProxy injects proxy settings.
 func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
-	document, err := mxj.NewMapXml([]byte(id.Settings))
+	m, err := mxj.NewMapXml([]byte(id.Settings))
 	if err != nil {
 		return
 	}
-	document = document["settings"].(model.Map)
 	proxies, err := addon.Proxy.List()
 	if err != nil {
 		return
 	}
-	pList := []MavenProxy{}
+	pList := []interface{}{}
 	for _, p := range proxies {
-		mp := MavenProxy{
-			ID:       p.Kind,
-			Active:   p.Enabled,
-			Protocol: p.Kind,
-			Host:     p.Host,
-			Port:     p.Port,
+		mp := mxj.Map{
+			"id":       p.Kind,
+			"active":   p.Enabled,
+			"protocol": p.Kind,
+			"host":     p.Host,
+			"port":     p.Port,
 		}
 		if p.Identity != nil {
 			pid, idErr := addon.Identity.Get(p.Identity.ID)
@@ -148,26 +145,22 @@ func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
 				err = idErr
 				return
 			}
-			mp.User = pid.User
-			mp.Password = pid.Password
+			mp["username"] = pid.User
+			mp["password"] = pid.Password
 		}
 		pList = append(pList, mp)
 	}
-	document["proxies"] = mxj.Map{"proxies": pList}
-	b, err := document.XmlIndent("", "  ", "settings")
+	v, err := m.ValuesForPath("settings.proxies.proxy")
+	if err != nil {
+		return
+	}
+	err = m.SetValueForPath(
+		mxj.Map{"proxy": append(v, pList...)},
+		"settings.proxies")
+	if err != nil {
+		return
+	}
+	b, err := m.XmlIndent("", "  ")
 	s = string(b)
 	return
-}
-
-//
-// MavenProxy
-type MavenProxy struct {
-	XMLName  xml.Name `xml:"proxy"`
-	ID       string   `xml:"id"`
-	Active   bool     `xml:"active"`
-	Protocol string   `xml:"protocol"`
-	Host     string   `xml:"host"`
-	Port     int      `xml:"port,omitempty"`
-	User     string   `xml:"username,omitempty"`
-	Password string   `xml:"password,omitempty"`
 }
