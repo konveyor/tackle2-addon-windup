@@ -122,6 +122,7 @@ func (r *Maven) writeSettings() (path string, err error) {
 //
 // injectProxy injects proxy settings.
 func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
+	s = id.Settings
 	m, err := mxj.NewMapXml([]byte(id.Settings))
 	if err != nil {
 		return
@@ -132,6 +133,9 @@ func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
 	}
 	pList := []interface{}{}
 	for _, p := range proxies {
+		if !p.Enabled {
+			continue
+		}
 		mp := mxj.Map{
 			"id":       p.Kind,
 			"active":   p.Enabled,
@@ -149,6 +153,9 @@ func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
 			mp["password"] = pid.Password
 		}
 		pList = append(pList, mp)
+	}
+	if len(pList) == 0 {
+		return
 	}
 	v, err := m.ValuesForPath("settings.proxies.proxy")
 	if err != nil {
