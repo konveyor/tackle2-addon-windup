@@ -23,7 +23,7 @@ RUN microdnf -y install \
   subversion \
   maven \
  && microdnf -y clean all
-ARG MTA=https://repo1.maven.org/maven2/org/jboss/windup/mta-cli/5.2.1.Final/mta-cli-5.2.1.Final-offline.zip
+ARG MTA=https://oss.sonatype.org/content/repositories/snapshots/org/jboss/windup/mta-cli/5.3.0-SNAPSHOT/mta-cli-5.3.0-20220311.114507-38-offline.zip
 RUN wget -qO /opt/windup.zip $MTA \
  && unzip /opt/windup.zip -d /opt \
  && rm /opt/windup.zip \
