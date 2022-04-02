@@ -16,7 +16,7 @@ RUN echo -e "[WandiscoSVN]" \
  "\nenabled=1" \
  "\ngpgcheck=0" > /etc/yum.repos.d/wandisco.repo
 RUN microdnf -y install \
-  java-1.8.0-openjdk-headless \
+  java-11-openjdk-headless \
   unzip \
   wget \
   git \
@@ -27,11 +27,11 @@ ARG MTA=https://oss.sonatype.org/content/repositories/snapshots/org/jboss/windup
 RUN wget -qO /opt/windup.zip $MTA \
  && unzip /opt/windup.zip -d /opt \
  && rm /opt/windup.zip \
- && ln -s /opt/mta-cli-5.2.1.Final/bin/mta-cli /opt/windup
+ && ln -s /opt/mta-cli-5.3.0-SNAPSHOT/bin/mta-cli /opt/windup
 ENV HOME=/working \
-    JAVA_HOME="/usr/lib/jvm/jre" \
+    JAVA_HOME="/usr/lib/jvm/jre-11" \
     JAVA_VENDOR="openjdk" \
-    JAVA_VERSION="1.8.0"
+    JAVA_VERSION="11"
 WORKDIR /working
 COPY --from=builder /opt/app-root/src/bin/addon /usr/local/bin/addon
 ENTRYPOINT ["/usr/local/bin/addon"]

@@ -141,6 +141,9 @@ type Scope struct {
 //
 // AddOptions adds windup options.
 func (r *Scope) AddOptions(options *Options) (err error) {
+	if r.WithKnown {
+		options.add("--analyzeKnownLibraries")
+	}
 	if len(r.Packages.Included) > 0 {
 		options.add("--packages", r.Packages.Included...)
 	}
