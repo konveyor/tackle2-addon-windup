@@ -69,7 +69,7 @@ func (r *Windup) options() (options Options, err error) {
 		return
 	}
 	if r.Rules != nil {
-		err = r.Scope.AddOptions(&options)
+		err = r.Rules.AddOptions(&options)
 		if err != nil {
 			return
 		}
