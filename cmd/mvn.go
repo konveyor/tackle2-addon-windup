@@ -76,6 +76,10 @@ func (r *Maven) run(options Options) (err error) {
 	if err != nil {
 		return
 	}
+	insecure, err := addon.Setting.Bool("mvn.insecure.enabled")
+	if err != nil {
+		return
+	}
 	err = os.MkdirAll(DepsDir, 0755)
 	if err != nil {
 		return
@@ -84,7 +88,12 @@ func (r *Maven) run(options Options) (err error) {
 	cmd.Options = options
 	cmd.Options.addf("-DoutputDirectory=%s", DepsDir)
 	cmd.Options.addf("-Dmaven.repo.local=%s", M2Dir)
-	cmd.Options.add("-s", settings)
+	if insecure {
+		cmd.Options.add("-Dmaven.wagon.http.ssl.insecure=true")
+	}
+	if settings != "" {
+		cmd.Options.add("-s", settings)
+	}
 	err = cmd.Run()
 	return
 }
