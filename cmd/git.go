@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
 	urllib "net/url"
 	"os"
@@ -20,6 +21,7 @@ type Git struct {
 func (r *Git) Validate() (err error) {
 	u, err := urllib.Parse(r.Application.Repository.URL)
 	if err != nil {
+		err = &SoftError{Reason: err.Error()}
 		return
 	}
 	insecure, err := addon.Setting.Bool("git.insecure.enabled")
@@ -29,8 +31,9 @@ func (r *Git) Validate() (err error) {
 	switch u.Scheme {
 	case "http":
 		if !insecure {
-			err = errors.New(
-				"http URL used with git.insecure.enabled = FALSE")
+			err = &SoftError{
+				Reason: "http URL used with git.insecure.enabled = FALSE",
+			}
 			return
 		}
 	}
@@ -47,7 +50,12 @@ func (r *Git) Fetch() (err error) {
 	if err != nil {
 		return
 	}
-	if !found {
+	if found {
+		addon.Activity(
+			"[GIT] Using credentials (%d) %s.",
+			id.ID,
+			id.Name)
+	} else {
 		id = &api.Identity{}
 	}
 	err = r.writeConfig()
@@ -85,11 +93,15 @@ func (r *Git) writeConfig() (err error) {
 	path := pathlib.Join(r.HomeDir, ".gitconfig")
 	_, err = os.Stat(path)
 	if !errors.Is(err, os.ErrNotExist) {
-		err = os.ErrExist
+		err = liberr.Wrap(os.ErrExist)
 		return
 	}
 	f, err := os.Create(path)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
 		return
 	}
 	insecure, err := addon.Setting.Bool("git.insecure.enabled")
@@ -108,6 +120,12 @@ func (r *Git) writeConfig() (err error) {
 		s += fmt.Sprintf("proxy = %s\n", proxy)
 	}
 	_, err = f.Write([]byte(s))
+	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
+	}
 	_ = f.Close()
 	return
 }
@@ -121,11 +139,15 @@ func (r *Git) writeCreds(id *api.Identity) (err error) {
 	path := pathlib.Join(r.HomeDir, ".git-credentials")
 	_, err = os.Stat(path)
 	if !errors.Is(err, os.ErrNotExist) {
-		err = os.ErrExist
+		err = liberr.Wrap(os.ErrExist)
 		return
 	}
 	f, err := os.Create(path)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
 		return
 	}
 	url := r.URL()
@@ -141,6 +163,12 @@ func (r *Git) writeCreds(id *api.Identity) (err error) {
 	}
 	entry += url.Host
 	_, err = f.Write([]byte(entry + "\n"))
+	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
+	}
 	_ = f.Close()
 	return
 }
@@ -168,6 +196,10 @@ func (r *Git) proxy() (proxy string, err error) {
 			return
 		}
 	}
+	addon.Activity(
+		"[GIT] Using proxy (%d) %s.",
+		p.ID,
+		p.Kind)
 	auth := ""
 	if p.Identity != nil {
 		var id *api.Identity

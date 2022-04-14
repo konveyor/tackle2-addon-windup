@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"io/ioutil"
 	urllib "net/url"
@@ -22,6 +23,7 @@ type Subversion struct {
 func (r *Subversion) Validate() (err error) {
 	u, err := urllib.Parse(r.Application.Repository.URL)
 	if err != nil {
+		err = &SoftError{Reason: err.Error()}
 		return
 	}
 	insecure, err := addon.Setting.Bool("svn.insecure.enabled")
@@ -31,8 +33,9 @@ func (r *Subversion) Validate() (err error) {
 	switch u.Scheme {
 	case "http":
 		if !insecure {
-			err = errors.New(
-				"http URL used with snv.insecure.enabled = FALSE")
+			err = &SoftError{
+				Reason: "http URL used with snv.insecure.enabled = FALSE",
+			}
 			return
 		}
 	}
@@ -49,7 +52,12 @@ func (r *Subversion) Fetch() (err error) {
 	if err != nil {
 		return
 	}
-	if !found {
+	if found {
+		addon.Activity(
+			"[SVN] Using credentials (%d) %s.",
+			id.ID,
+			id.Name)
+	} else {
 		id = &api.Identity{}
 	}
 	err = r.writeConfig()
@@ -100,7 +108,7 @@ func (r *Subversion) writeConfig() (err error) {
 		"servers")
 	_, err = os.Stat(path)
 	if !errors.Is(err, os.ErrNotExist) {
-		err = os.ErrExist
+		err = liberr.Wrap(os.ErrExist)
 		return
 	}
 	err = r.EnsureDir(pathlib.Dir(path), 0755)
@@ -109,6 +117,10 @@ func (r *Subversion) writeConfig() (err error) {
 	}
 	f, err := os.Create(path)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
 		return
 	}
 	proxy, err := r.proxy()
@@ -116,6 +128,12 @@ func (r *Subversion) writeConfig() (err error) {
 		return
 	}
 	_, err = f.Write([]byte(proxy))
+	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
+	}
 	_ = f.Close()
 	return
 }
@@ -144,11 +162,19 @@ func (r *Subversion) writePassword(id *api.Identity) (err error) {
 		"svn.simple")
 	files, err := os.ReadDir(dir)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			dir)
 		return
 	}
 	path := pathlib.Join(dir, files[0].Name())
 	f, err := os.OpenFile(path, os.O_RDWR, 0644)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
 		return
 	}
 	defer func() {
@@ -156,10 +182,18 @@ func (r *Subversion) writePassword(id *api.Identity) (err error) {
 	}()
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
 		return
 	}
 	_, err = f.Seek(0, 0)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
 		return
 	}
 	s := "K 8\n"
@@ -176,6 +210,12 @@ func (r *Subversion) writePassword(id *api.Identity) (err error) {
 	s += fmt.Sprintf("%s\n", id.Password)
 	s += string(content)
 	_, err = f.Write([]byte(s))
+	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
+	}
 	return
 }
 
@@ -202,6 +242,10 @@ func (r *Subversion) proxy() (proxy string, err error) {
 			return
 		}
 	}
+	addon.Activity(
+		"[SVN] Using proxy (%d) %s.",
+		p.ID,
+		p.Kind)
 	var id *api.Identity
 	if p.Identity != nil {
 		id, err = addon.Identity.Get(p.Identity.ID)
