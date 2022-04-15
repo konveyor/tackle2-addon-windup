@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"os"
 	pathlib "path"
@@ -34,7 +35,7 @@ func newRepository(homeDir string, application *api.Application) (r Repository, 
 	case "git":
 		r = &Git{}
 	default:
-		err = errors.New("unknown kind")
+		err = &SoftError{Reason: "Unknown repository kind"}
 		return
 	}
 	r.With(homeDir, application)
@@ -71,6 +72,11 @@ func (r *SCM) EnsureDir(path string, mode os.FileMode) (err error) {
 	if err != nil {
 		if errors.Is(err, os.ErrExist) {
 			err = nil
+		} else {
+			err = liberr.Wrap(
+				err,
+				"path",
+				path)
 		}
 	}
 	return
@@ -90,14 +96,24 @@ func (r *SCM) WriteKey(id *api.Identity) (err error) {
 	path := pathlib.Join(dir, "id_git")
 	_, err = os.Stat(path)
 	if !errors.Is(err, os.ErrNotExist) {
-		err = os.ErrExist
+		err = liberr.Wrap(os.ErrExist)
 		return
 	}
 	f, err := os.Create(path)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
 		return
 	}
 	_, err = f.Write([]byte(id.Key))
+	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
+	}
 	_ = f.Close()
 	return
 }

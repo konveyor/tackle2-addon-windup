@@ -1,6 +1,7 @@
 package main
 
 import (
+	liberr "github.com/konveyor/controller/pkg/error"
 	"os"
 	pathlib "path"
 )
@@ -15,12 +16,21 @@ type Windup struct {
 //
 // Run windup.
 func (r *Windup) Run() (err error) {
-	err = os.RemoveAll(r.output())
+	output := r.output()
+	err = os.RemoveAll(output)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			output)
 		return
 	}
-	err = os.MkdirAll(r.output(), 0777)
+	err = os.MkdirAll(output, 0777)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			output)
 		return
 	}
 	cmd := Command{Path: "/opt/windup"}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	hub "github.com/konveyor/tackle2-hub/addon"
 	"os"
 )
@@ -18,6 +17,8 @@ func init() {
 	HomeDir, _ = os.UserHomeDir()
 	Dir, _ = os.Getwd()
 }
+
+type SoftError = hub.SoftError
 
 //
 // Data Addon data passed in the secret.
@@ -45,6 +46,7 @@ func main() {
 		d := &Data{}
 		err = addon.DataWith(d)
 		if err != nil {
+			err = &SoftError{Reason: err.Error()}
 			return
 		}
 		windup := Windup{}
@@ -63,7 +65,7 @@ func main() {
 		if !d.Mode.Binary {
 			addon.Total(2)
 			if application.Repository == nil {
-				err = errors.New("Application repository not defined.")
+				err = &SoftError{Reason: "Application repository not defined."}
 				return
 			}
 			var r Repository

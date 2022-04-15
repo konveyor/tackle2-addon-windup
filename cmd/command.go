@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"os/exec"
 	"strings"
 )
@@ -29,12 +30,20 @@ func (r *Command) Run() (err error) {
 	b, err := cmd.CombinedOutput()
 	exitErr := &exec.ExitError{}
 	if errors.As(err, &exitErr) {
+		err = &SoftError{
+			Reason: fmt.Sprintf("[CMD] %s failed.", r.Path),
+		}
 		output := string(b)
 		for _, line := range strings.Split(output, "\n") {
 			addon.Activity(
 				"> %s",
 				line)
 		}
+	} else {
+		err = liberr.Wrap(
+			err,
+			"command",
+			r.Path)
 	}
 
 	return

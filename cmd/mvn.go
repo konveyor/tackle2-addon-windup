@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/clbanning/mxj"
+	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"os"
 	pathlib "path"
@@ -82,6 +83,10 @@ func (r *Maven) run(options Options) (err error) {
 	}
 	err = os.MkdirAll(DepsDir, 0755)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			DepsDir)
 		return
 	}
 	cmd := Command{Path: "/usr/bin/mvn"}
@@ -105,17 +110,26 @@ func (r *Maven) writeSettings() (path string, err error) {
 	if err != nil {
 		return
 	}
-	if !found {
+	if found {
+		addon.Activity(
+			"[MVN] Using credentials (%d) %s.",
+			id.ID,
+			id.Name)
+	} else {
 		return
 	}
 	path = pathlib.Join(Dir, SettingsFile)
 	_, err = os.Stat(path)
 	if !errors.Is(err, os.ErrNotExist) {
-		err = os.ErrExist
+		err = liberr.Wrap(os.ErrExist)
 		return
 	}
 	f, err := os.Create(path)
 	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
 		return
 	}
 	settings := id.Settings
@@ -124,6 +138,12 @@ func (r *Maven) writeSettings() (path string, err error) {
 		return
 	}
 	_, err = f.Write([]byte(settings))
+	if err != nil {
+		err = liberr.Wrap(
+			err,
+			"path",
+			path)
+	}
 	_ = f.Close()
 	return
 }
@@ -134,6 +154,7 @@ func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
 	s = id.Settings
 	m, err := mxj.NewMapXml([]byte(id.Settings))
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	proxies, err := addon.Proxy.List()
@@ -145,6 +166,10 @@ func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
 		if !p.Enabled {
 			continue
 		}
+		addon.Activity(
+			"[MVN] Using proxy (%d) %s.",
+			p.ID,
+			p.Kind)
 		mp := mxj.Map{
 			"id":       p.Kind,
 			"active":   p.Enabled,
@@ -168,12 +193,14 @@ func (r *Maven) injectProxy(id *api.Identity) (s string, err error) {
 	}
 	v, err := m.ValuesForPath("settings.proxies.proxy")
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	err = m.SetValueForPath(
 		mxj.Map{"proxy": append(v, pList...)},
 		"settings.proxies")
 	if err != nil {
+		err = liberr.Wrap(err)
 		return
 	}
 	b, err := m.XmlIndent("", "  ")
