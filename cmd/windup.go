@@ -105,8 +105,11 @@ func (r *Mode) AddOptions(options *Options) (err error) {
 			options.add("--input", binDir)
 		}
 	} else {
-		options.add("--input", SourceDir)
 		options.add("--sourceMode")
+		options.add("--input", SourceDir)
+		if r.WithDeps {
+			options.add("--input", DepsDir)
+		}
 	}
 
 	return
