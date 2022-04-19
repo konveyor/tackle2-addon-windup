@@ -146,8 +146,8 @@ func (r Targets) AddOptions(options *Options) (err error) {
 type Scope struct {
 	WithKnown bool `json:"withKnown"`
 	Packages  struct {
-		Included []string `json:"included"`
-		Excluded []string `json:"excluded"`
+		Included []string `json:"included,omitempty"`
+		Excluded []string `json:"excluded,omitempty"`
 	} `json:"packages"`
 }
 
@@ -171,8 +171,8 @@ func (r *Scope) AddOptions(options *Options) (err error) {
 type Rules struct {
 	Path string `json:"path" binding:"required"`
 	Tags struct {
-		Included []string `json:"included"`
-		Excluded []string `json:"excluded"`
+		Included []string `json:"included,omitempty"`
+		Excluded []string `json:"excluded,omitempty"`
 	} `json:"tags"`
 }
 
