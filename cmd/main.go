@@ -56,7 +56,7 @@ func main() {
 		addon.Activity("Fetching application.")
 		application, err := addon.Task.Application()
 		if err == nil {
-			windup.bucket = application.Bucket
+			windup.application = application
 		} else {
 			return
 		}
