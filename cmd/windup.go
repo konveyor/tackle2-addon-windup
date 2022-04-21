@@ -94,15 +94,9 @@ func (r *Windup) options() (options Options, err error) {
 //
 // maven add --input for maven artifacts.
 func (r *Windup) maven(options *Options) (err error) {
-	if _, err = os.Stat(DepsDir); err != nil {
-		if os.IsNotExist(err) {
-			err = nil
-		} else {
-			err = liberr.Wrap(err)
-			return
-		}
-	} else {
-		options.add("--input", DepsDir)
+	found, err := Exists(BinDir)
+	if found {
+		options.add("--input", BinDir)
 	}
 	return
 }

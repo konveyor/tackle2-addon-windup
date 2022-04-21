@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -85,5 +86,21 @@ func RmDir(path string) (err error) {
 	cmd := Command{Path: "/usr/bin/rm"}
 	cmd.Options.add("-rf", path)
 	err = cmd.Run()
+	return
+}
+
+//
+// Exists return if the path exists.
+func Exists(path string) (found bool, err error) {
+	_, err = os.Stat(path)
+	if err == nil {
+		found = true
+		return
+	}
+	if !os.IsNotExist(err) {
+		err = liberr.Wrap(err)
+	} else {
+		err = nil
+	}
 	return
 }

@@ -14,19 +14,19 @@ const (
 )
 
 var (
-	// DepsDir the maven output dir.
-	DepsDir = "deps"
+	// BinDir the maven output dir.
+	BinDir = "bin"
 	// M2Dir the maven repository.
 	M2Dir = "/mnt/m2"
 )
 
 func init() {
 	//
-	// DEPS_DIR - Maven output dir.
-	if path, found := os.LookupEnv("DEPS_DIR"); found {
-		DepsDir = path
+	// BIN_DIR - Maven output dir.
+	if path, found := os.LookupEnv("BIN_DIR"); found {
+		BinDir = path
 	} else {
-		DepsDir = pathlib.Join(Dir, DepsDir)
+		BinDir = pathlib.Join(Dir, BinDir)
 	}
 	//
 	// M2_DIR - Maven repository.
@@ -81,17 +81,17 @@ func (r *Maven) run(options Options) (err error) {
 	if err != nil {
 		return
 	}
-	err = os.MkdirAll(DepsDir, 0755)
+	err = os.MkdirAll(BinDir, 0755)
 	if err != nil {
 		err = liberr.Wrap(
 			err,
 			"path",
-			DepsDir)
+			BinDir)
 		return
 	}
 	cmd := Command{Path: "/usr/bin/mvn"}
 	cmd.Options = options
-	cmd.Options.addf("-DoutputDirectory=%s", DepsDir)
+	cmd.Options.addf("-DoutputDirectory=%s", BinDir)
 	cmd.Options.addf("-Dmaven.repo.local=%s", M2Dir)
 	if insecure {
 		cmd.Options.add("-Dmaven.wagon.http.ssl.insecure=true")
