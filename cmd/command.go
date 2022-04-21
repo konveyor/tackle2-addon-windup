@@ -28,6 +28,9 @@ func (r *Command) Run() (err error) {
 	cmd := exec.Command(r.Path, r.Options...)
 	cmd.Dir = r.Dir
 	b, err := cmd.CombinedOutput()
+	if err == nil {
+		addon.Activity("[CMD] succeeded.")
+	}
 	exitErr := &exec.ExitError{}
 	if errors.As(err, &exitErr) {
 		err = &SoftError{
@@ -74,4 +77,13 @@ func (a *Options) add(option string, s ...string) {
 // add
 func (a *Options) addf(option string, x ...interface{}) {
 	*a = append(*a, fmt.Sprintf(option, x...))
+}
+
+//
+// RmDir delete the directory.
+func RmDir(path string) (err error) {
+	cmd := Command{Path: "/usr/bin/rm"}
+	cmd.Options.add("-rf", path)
+	err = cmd.Run()
+	return
 }

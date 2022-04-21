@@ -18,12 +18,10 @@ type Windup struct {
 // Run windup.
 func (r *Windup) Run() (err error) {
 	output := r.output()
-	err = os.RemoveAll(output)
+	cmd := Command{Path: "/usr/bin/rm"}
+	cmd.Options.add("-rf", output)
+	err = cmd.Run()
 	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			output)
 		return
 	}
 	err = os.MkdirAll(output, 0777)
@@ -34,7 +32,8 @@ func (r *Windup) Run() (err error) {
 			output)
 		return
 	}
-	cmd := Command{Path: "/opt/windup"}
+	addon.Activity("[Windup] created: %s.", output)
+	cmd = Command{Path: "/opt/windup"}
 	cmd.Options, err = r.options()
 	if err != nil {
 		return
