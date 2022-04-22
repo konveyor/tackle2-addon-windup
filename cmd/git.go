@@ -45,7 +45,7 @@ func (r *Git) Validate() (err error) {
 func (r *Git) Fetch() (err error) {
 	url := r.URL()
 	addon.Activity("[GIT] Cloning: %s", url.String())
-	_ = os.RemoveAll(SourceDir)
+	_ = RmDir(SourceDir)
 	id, found, err := addon.Application.FindIdentity(r.Application.ID, "source")
 	if err != nil {
 		return

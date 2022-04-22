@@ -46,8 +46,8 @@ func (r *Subversion) Validate() (err error) {
 // Fetch clones the repository.
 func (r *Subversion) Fetch() (err error) {
 	url := r.URL()
+	_ = RmDir(SourceDir)
 	addon.Activity("[SVN] Cloning: %s", url.String())
-	_ = os.RemoveAll(SourceDir)
 	id, found, err := addon.Application.FindIdentity(r.Application.ID, "source")
 	if err != nil {
 		return

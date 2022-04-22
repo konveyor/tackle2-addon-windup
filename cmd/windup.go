@@ -2,6 +2,7 @@ package main
 
 import (
 	liberr "github.com/konveyor/controller/pkg/error"
+	"github.com/konveyor/tackle2-hub/api"
 	"os"
 	pathlib "path"
 )
@@ -9,20 +10,18 @@ import (
 //
 // Windup application analyzer.
 type Windup struct {
+	application *api.Application
 	*Data
-	bucket string
 }
 
 //
 // Run windup.
 func (r *Windup) Run() (err error) {
 	output := r.output()
-	err = os.RemoveAll(output)
+	cmd := Command{Path: "/usr/bin/rm"}
+	cmd.Options.add("-rf", output)
+	err = cmd.Run()
 	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			output)
 		return
 	}
 	err = os.MkdirAll(output, 0777)
@@ -33,7 +32,8 @@ func (r *Windup) Run() (err error) {
 			output)
 		return
 	}
-	cmd := Command{Path: "/opt/windup"}
+	addon.Activity("[Windup] created: %s.", output)
+	cmd = Command{Path: "/opt/windup"}
 	cmd.Options, err = r.options()
 	if err != nil {
 		return
@@ -46,7 +46,7 @@ func (r *Windup) Run() (err error) {
 // output returns output directory.
 func (r *Windup) output() string {
 	return pathlib.Join(
-		r.bucket,
+		r.application.Bucket,
 		r.Output)
 }
 
@@ -57,6 +57,10 @@ func (r *Windup) options() (options Options, err error) {
 		"--batchMode",
 		"--output",
 		r.output(),
+	}
+	err = r.maven(&options)
+	if err != nil {
+		return
 	}
 	err = r.Mode.AddOptions(&options)
 	if err != nil {
@@ -88,6 +92,16 @@ func (r *Windup) options() (options Options, err error) {
 }
 
 //
+// maven add --input for maven artifacts.
+func (r *Windup) maven(options *Options) (err error) {
+	found, err := Exists(BinDir)
+	if found {
+		options.add("--input", BinDir)
+	}
+	return
+}
+
+//
 // Mode settings.
 type Mode struct {
 	Binary     bool   `json:"binary"`
@@ -102,14 +116,11 @@ func (r *Mode) AddOptions(options *Options) (err error) {
 	if r.Binary {
 		if r.Artifact != "" {
 			binDir := pathlib.Join(addon.Task.Bucket(), r.Artifact)
-			options.add("--input", binDir)
+			options.add("--input", pathlib.Dir(binDir))
 		}
 	} else {
 		options.add("--sourceMode")
 		options.add("--input", SourceDir)
-		if r.WithDeps {
-			options.add("--input", DepsDir)
-		}
 	}
 
 	return

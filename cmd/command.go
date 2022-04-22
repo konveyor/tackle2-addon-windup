@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	liberr "github.com/konveyor/controller/pkg/error"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -28,6 +29,9 @@ func (r *Command) Run() (err error) {
 	cmd := exec.Command(r.Path, r.Options...)
 	cmd.Dir = r.Dir
 	b, err := cmd.CombinedOutput()
+	if err == nil {
+		addon.Activity("[CMD] succeeded.")
+	}
 	exitErr := &exec.ExitError{}
 	if errors.As(err, &exitErr) {
 		err = &SoftError{
@@ -74,4 +78,29 @@ func (a *Options) add(option string, s ...string) {
 // add
 func (a *Options) addf(option string, x ...interface{}) {
 	*a = append(*a, fmt.Sprintf(option, x...))
+}
+
+//
+// RmDir delete the directory.
+func RmDir(path string) (err error) {
+	cmd := Command{Path: "/usr/bin/rm"}
+	cmd.Options.add("-rf", path)
+	err = cmd.Run()
+	return
+}
+
+//
+// Exists return if the path exists.
+func Exists(path string) (found bool, err error) {
+	_, err = os.Stat(path)
+	if err == nil {
+		found = true
+		return
+	}
+	if !os.IsNotExist(err) {
+		err = liberr.Wrap(err)
+	} else {
+		err = nil
+	}
+	return
 }
