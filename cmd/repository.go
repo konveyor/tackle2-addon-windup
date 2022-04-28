@@ -21,22 +21,11 @@ func init() {
 //
 // Factory.
 func newRepository(homeDir string, application *api.Application) (r Repository, err error) {
-	kind := application.Repository.Kind
-	if kind == "" {
-		if strings.HasSuffix(application.Repository.URL, ".git") {
-			kind = "git"
-		} else {
-			kind = "svn"
-		}
-	}
-	switch kind {
-	case "svn":
+	switch strings.ToLower(application.Repository.Kind) {
+	case "subversion":
 		r = &Subversion{}
-	case "git":
-		r = &Git{}
 	default:
-		err = &SoftError{Reason: "Unknown repository kind"}
-		return
+		r = &Git{}
 	}
 	r.With(homeDir, application)
 	err = r.Validate()
