@@ -40,10 +40,10 @@ func (r *Windup) Run() (err error) {
 		return
 	}
 	err = cmd.Run()
-	if err == nil {
-		return
+	if err != nil {
+		r.reportLog()
 	}
-	r.reportLog()
+
 	return
 }
 
@@ -61,7 +61,7 @@ func (r *Windup) reportLog() {
 	}
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		addon.Activity("> %s\n", scanner.Text())
+		addon.Activity(">> %s\n", scanner.Text())
 	}
 	_ = f.Close()
 }
