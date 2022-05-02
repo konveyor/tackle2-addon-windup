@@ -151,23 +151,30 @@ func (r *Git) writeCreds(id *api.Identity) (err error) {
 		return
 	}
 	url := r.URL()
-	entry := url.Scheme
-	entry += "://"
-	if id.User != "" {
-		entry += id.User
-		entry += ":"
-	}
-	if id.Password != "" {
-		entry += id.Password
-		entry += "@"
-	}
-	entry += url.Host
-	_, err = f.Write([]byte(entry + "\n"))
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			path)
+	for _, scheme := range []string{
+		url.Scheme,
+		"https",
+		"http",
+	} {
+		entry := scheme
+		entry += "://"
+		if id.User != "" {
+			entry += id.User
+			entry += ":"
+		}
+		if id.Password != "" {
+			entry += id.Password
+			entry += "@"
+		}
+		entry += url.Host
+		_, err = f.Write([]byte(entry + "\n"))
+		if err != nil {
+			err = liberr.Wrap(
+				err,
+				"path",
+				path)
+			break
+		}
 	}
 	_ = f.Close()
 	return
