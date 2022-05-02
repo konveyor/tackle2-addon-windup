@@ -3,6 +3,9 @@ package main
 import (
 	"bufio"
 	liberr "github.com/konveyor/controller/pkg/error"
+	"github.com/konveyor/tackle2-addon/command"
+	"github.com/konveyor/tackle2-addon/nas"
+	"github.com/konveyor/tackle2-addon/repository"
 	"github.com/konveyor/tackle2-hub/api"
 	"os"
 	pathlib "path"
@@ -19,8 +22,8 @@ type Windup struct {
 // Run windup.
 func (r *Windup) Run() (err error) {
 	output := r.output()
-	cmd := Command{Path: "/usr/bin/rm"}
-	cmd.Options.add("-rf", output)
+	cmd := command.Command{Path: "/usr/bin/rm"}
+	cmd.Options.Add("-rf", output)
 	err = cmd.Run()
 	if err != nil {
 		return
@@ -34,7 +37,7 @@ func (r *Windup) Run() (err error) {
 		return
 	}
 	addon.Activity("[Windup] created: %s.", output)
-	cmd = Command{Path: "/opt/windup"}
+	cmd = command.Command{Path: "/opt/windup"}
 	cmd.Options, err = r.options()
 	if err != nil {
 		return
@@ -76,8 +79,8 @@ func (r *Windup) output() string {
 
 //
 // options builds CLL options.
-func (r *Windup) options() (options Options, err error) {
-	options = Options{
+func (r *Windup) options() (options command.Options, err error) {
+	options = command.Options{
 		"--batchMode",
 		"--output",
 		r.output(),
@@ -117,10 +120,10 @@ func (r *Windup) options() (options Options, err error) {
 
 //
 // maven add --input for maven artifacts.
-func (r *Windup) maven(options *Options) (err error) {
-	found, err := Exists(BinDir)
+func (r *Windup) maven(options *command.Options) (err error) {
+	found, err := nas.HasDir(BinDir)
 	if found {
-		options.add("--input", BinDir)
+		options.Add("--input", BinDir)
 	}
 	return
 }
@@ -131,20 +134,20 @@ type Mode struct {
 	Binary     bool   `json:"binary"`
 	Artifact   string `json:"artifact"`
 	WithDeps   bool   `json:"withDeps"`
-	Repository Repository
+	Repository repository.Repository
 }
 
 //
 // AddOptions adds windup options.
-func (r *Mode) AddOptions(options *Options) (err error) {
+func (r *Mode) AddOptions(options *command.Options) (err error) {
 	if r.Binary {
 		if r.Artifact != "" {
 			binDir := pathlib.Join(addon.Task.Bucket(), r.Artifact)
-			options.add("--input", pathlib.Dir(binDir))
+			options.Add("--input", pathlib.Dir(binDir))
 		}
 	} else {
-		options.add("--sourceMode")
-		options.add("--input", SourceDir)
+		options.Add("--sourceMode")
+		options.Add("--input", SourceDir)
 	}
 
 	return
@@ -156,9 +159,9 @@ type Sources []string
 
 //
 // AddOptions add options.
-func (r Sources) AddOptions(options *Options) (err error) {
+func (r Sources) AddOptions(options *command.Options) (err error) {
 	for _, source := range r {
-		options.add("--source", source)
+		options.Add("--source", source)
 	}
 	return
 }
@@ -169,9 +172,9 @@ type Targets []string
 
 //
 // AddOptions add options.
-func (r Targets) AddOptions(options *Options) (err error) {
+func (r Targets) AddOptions(options *command.Options) (err error) {
 	for _, target := range r {
-		options.add("--target", target)
+		options.Add("--target", target)
 	}
 	return
 }
@@ -188,15 +191,15 @@ type Scope struct {
 
 //
 // AddOptions adds windup options.
-func (r *Scope) AddOptions(options *Options) (err error) {
+func (r *Scope) AddOptions(options *command.Options) (err error) {
 	if r.WithKnown {
-		options.add("--analyzeKnownLibraries")
+		options.Add("--analyzeKnownLibraries")
 	}
 	if len(r.Packages.Included) > 0 {
-		options.add("--packages", r.Packages.Included...)
+		options.Add("--packages", r.Packages.Included...)
 	}
 	if len(r.Packages.Excluded) > 0 {
-		options.add("--excludePackages", r.Packages.Excluded...)
+		options.Add("--excludePackages", r.Packages.Excluded...)
 	}
 	return
 }
@@ -213,17 +216,17 @@ type Rules struct {
 
 //
 // AddOptions adds windup options.
-func (r *Rules) AddOptions(options *Options) (err error) {
-	options.add(
+func (r *Rules) AddOptions(options *command.Options) (err error) {
+	options.Add(
 		"--userRulesDirectory",
 		pathlib.Join(
 			addon.Task.Bucket(),
 			r.Path))
 	if len(r.Tags.Included) > 0 {
-		options.add("--includeTags", r.Tags.Included...)
+		options.Add("--includeTags", r.Tags.Included...)
 	}
 	if len(r.Tags.Excluded) > 0 {
-		options.add("--excludeTags", r.Tags.Excluded...)
+		options.Add("--excludeTags", r.Tags.Excluded...)
 	}
 	return
 }
