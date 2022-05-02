@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-hub/api"
 	"os"
@@ -39,7 +40,30 @@ func (r *Windup) Run() (err error) {
 		return
 	}
 	err = cmd.Run()
+	if err != nil {
+		r.reportLog()
+	}
+
 	return
+}
+
+//
+// reportLog reports the log content.
+func (r *Windup) reportLog() {
+	path := pathlib.Join(
+		HomeDir,
+		".mta",
+		"log",
+		"mta.log")
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		addon.Activity(">> %s\n", scanner.Text())
+	}
+	_ = f.Close()
 }
 
 //

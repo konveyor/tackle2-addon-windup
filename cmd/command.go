@@ -29,13 +29,15 @@ func (r *Command) Run() (err error) {
 	cmd := exec.Command(r.Path, r.Options...)
 	cmd.Dir = r.Dir
 	b, err := cmd.CombinedOutput()
-	if err == nil {
+	if err != nil {
+		addon.Activity("[CMD] failed: %s", err.Error())
+	} else {
 		addon.Activity("[CMD] succeeded.")
 	}
 	exitErr := &exec.ExitError{}
 	if errors.As(err, &exitErr) {
 		err = &SoftError{
-			Reason: fmt.Sprintf("[CMD] %s failed.", r.Path),
+			Reason: fmt.Sprintf("[CMD] %s failed:%s", r.Path, err.Error()),
 		}
 		output := string(b)
 		for _, line := range strings.Split(output, "\n") {
