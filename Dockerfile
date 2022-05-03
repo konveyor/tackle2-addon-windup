@@ -17,6 +17,7 @@ RUN echo -e "[WandiscoSVN]" \
  "\ngpgcheck=0" > /etc/yum.repos.d/wandisco.repo
 RUN microdnf -y install \
   java-11-openjdk-headless \
+  openssh-clients \
   unzip \
   wget \
   git \

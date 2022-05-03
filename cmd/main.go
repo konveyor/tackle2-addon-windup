@@ -1,21 +1,28 @@
 package main
 
 import (
+	"github.com/konveyor/tackle2-addon/repository"
+	"github.com/konveyor/tackle2-addon/ssh"
 	hub "github.com/konveyor/tackle2-hub/addon"
 	"os"
+	"path"
 )
 
 var (
 	// hub integration.
 	addon = hub.Addon
 	// HomeDir directory.
-	HomeDir = ""
-	Dir     = ""
+	HomeDir   = ""
+	BinDir    = ""
+	SourceDir = ""
+	Dir       = ""
 )
 
 func init() {
-	HomeDir, _ = os.UserHomeDir()
 	Dir, _ = os.Getwd()
+	HomeDir, _ = os.UserHomeDir()
+	SourceDir = path.Join(Dir, "source")
+	BinDir = path.Join(Dir, "bin")
 }
 
 type SoftError = hub.SoftError
@@ -61,6 +68,20 @@ func main() {
 			return
 		}
 		//
+		// Maven.
+		maven := repository.Maven{
+			Application: application,
+			M2Dir:       "/mnt/m2",
+			BinDir:      BinDir,
+		}
+		//
+		// SSH
+		agent := ssh.Agent{}
+		err = agent.Start()
+		if err != nil {
+			return
+		}
+		//
 		// Fetch repository.
 		if !d.Mode.Binary {
 			addon.Total(2)
@@ -68,8 +89,8 @@ func main() {
 				err = &SoftError{Reason: "Application repository not defined."}
 				return
 			}
-			var r Repository
-			r, err = newRepository(HomeDir, application)
+			var r repository.Repository
+			r, err = repository.New(SourceDir, application)
 			if err != nil {
 				return
 			}
@@ -81,18 +102,14 @@ func main() {
 				return
 			}
 			if d.Mode.WithDeps {
-				mvn := Maven{}
-				mvn.Application = application
-				err = mvn.Fetch()
+				err = maven.Fetch(SourceDir)
 				if err != nil {
 					return
 				}
 			}
 		} else {
 			if d.Mode.Artifact == "" {
-				mvn := Maven{}
-				mvn.Application = application
-				err = mvn.FetchArtifact()
+				err = maven.FetchArtifact()
 				if err != nil {
 					return
 				}
