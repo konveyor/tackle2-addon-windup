@@ -312,11 +312,10 @@ github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxv
 github.com/konsorten/go-windows-terminal-sequences v1.0.2/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konveyor/controller v0.8.0 h1:TB4KOqnWKzpuW0LLI571NzQYIXI/bmcf9K1vl8ctVkg=
 github.com/konveyor/controller v0.8.0/go.mod h1:U2h8HnX1MXoUlLA8ySP+PJClK9+aR38mxtqLGAvAprE=
-github.com/konveyor/tackle2-addon v0.0.0-20220503044926-7a74e0c41f11 h1:xsbIOn6IhWNn7rlMZoPsFWQzAbVQMFl+6/dAgCiStG0=
-github.com/konveyor/tackle2-addon v0.0.0-20220503044926-7a74e0c41f11/go.mod h1:0VV+SqfmNUK9quKnIOEP4/5oue8Q4sM0bxdB5Uu90lA=
-github.com/konveyor/tackle2-hub v0.0.0-20220426192451-011b58e3f803/go.mod h1:DwBjZy3Kk7GDFH1FgTPjUpo8oq99jdCjyAH1zkQGCzc=
-github.com/konveyor/tackle2-hub v0.0.0-20220429121145-4c5fd4b1552e h1:fJuIKZzq64gS9npZjhvFsR7d6oLp2+mZ4n5lN7ENyek=
-github.com/konveyor/tackle2-hub v0.0.0-20220429121145-4c5fd4b1552e/go.mod h1:DwBjZy3Kk7GDFH1FgTPjUpo8oq99jdCjyAH1zkQGCzc=
+github.com/konveyor/tackle2-addon v0.0.0-20220510123715-909961866d06 h1:roijOFaOwBmJAToui5f5MLdQSJiXlR0S5lTUecoUk5c=
+github.com/konveyor/tackle2-addon v0.0.0-20220510123715-909961866d06/go.mod h1:MFNKAQREQnKkSWwIMadds8QbWlQw+ur41Cyg1GKOXuE=
+github.com/konveyor/tackle2-hub v0.0.0-20220510102650-542558f3f9cb h1:HCfULK71qLct5S+7bMmnDGSI1/TTIj8BhCDP2SjEueM=
+github.com/konveyor/tackle2-hub v0.0.0-20220510102650-542558f3f9cb/go.mod h1:WcxWlSwZlupU0Lp00k6MfnkDR3vkk5Ba5Nq6jmViywk=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
