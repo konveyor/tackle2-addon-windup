@@ -6,6 +6,7 @@ import (
 	hub "github.com/konveyor/tackle2-hub/addon"
 	"os"
 	"path"
+	"strings"
 )
 
 var (
@@ -22,7 +23,7 @@ func init() {
 	Dir, _ = os.Getwd()
 	HomeDir, _ = os.UserHomeDir()
 	SourceDir = path.Join(Dir, "source")
-	BinDir = path.Join(Dir, "bin")
+	BinDir = path.Join(Dir, "dependencies")
 }
 
 type SoftError = hub.SoftError
@@ -56,6 +57,8 @@ func main() {
 			err = &SoftError{Reason: err.Error()}
 			return
 		}
+		//
+		// windup
 		windup := Windup{}
 		windup.Data = d
 		//
@@ -83,6 +86,12 @@ func main() {
 		}
 		//
 		// Fetch repository.
+		SourceDir = path.Join(
+			Dir,
+			strings.Split(
+				path.Base(
+					application.Repository.URL),
+				".")[0])
 		if !d.Mode.Binary {
 			addon.Total(2)
 			if application.Repository == nil {
