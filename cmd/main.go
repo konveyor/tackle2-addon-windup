@@ -86,18 +86,18 @@ func main() {
 		}
 		//
 		// Fetch repository.
-		SourceDir = path.Join(
-			Dir,
-			strings.Split(
-				path.Base(
-					application.Repository.URL),
-				".")[0])
 		if !d.Mode.Binary {
 			addon.Total(2)
 			if application.Repository == nil {
 				err = &SoftError{Reason: "Application repository not defined."}
 				return
 			}
+			SourceDir = path.Join(
+				Dir,
+				strings.Split(
+					path.Base(
+						application.Repository.URL),
+					".")[0])
 			var r repository.Repository
 			r, err = repository.New(SourceDir, application)
 			if err != nil {
