@@ -134,6 +134,7 @@ type Mode struct {
 	Binary     bool   `json:"binary"`
 	Artifact   string `json:"artifact"`
 	WithDeps   bool   `json:"withDeps"`
+	Diva       bool   `json:"diva"`
 	Repository repository.Repository
 }
 
@@ -148,6 +149,9 @@ func (r *Mode) AddOptions(options *command.Options) (err error) {
 	} else {
 		options.Add("--sourceMode")
 		options.Add("--input", SourceDir)
+	}
+	if r.Diva {
+		options.Add("--enableTransactionAnalysis")
 	}
 
 	return
