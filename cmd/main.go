@@ -16,6 +16,7 @@ var (
 	HomeDir   = ""
 	BinDir    = ""
 	SourceDir = ""
+	AppDir    = ""
 	Dir       = ""
 )
 
@@ -98,6 +99,7 @@ func main() {
 					path.Base(
 						application.Repository.URL),
 					".")[0])
+			AppDir = path.Join(SourceDir, application.Repository.Path)
 			var r repository.Repository
 			r, err = repository.New(SourceDir, application)
 			if err != nil {
@@ -111,7 +113,7 @@ func main() {
 				return
 			}
 			if d.Mode.WithDeps {
-				err = maven.Fetch(SourceDir)
+				err = maven.Fetch(AppDir)
 				if err != nil {
 					return
 				}
