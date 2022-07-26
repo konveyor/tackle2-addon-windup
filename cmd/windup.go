@@ -148,7 +148,7 @@ func (r *Mode) AddOptions(options *command.Options) (err error) {
 		}
 	} else {
 		options.Add("--sourceMode")
-		options.Add("--input", SourceDir)
+		options.Add("--input", AppDir)
 	}
 	if r.Diva {
 		options.Add("--enableTransactionAnalysis")
