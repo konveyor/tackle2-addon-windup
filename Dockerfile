@@ -24,11 +24,11 @@ RUN microdnf -y install \
   subversion \
   maven \
  && microdnf -y clean all
-ARG MTA=https://oss.sonatype.org/content/groups/public/org/jboss/windup/tackle-cli/5.3.1-SNAPSHOT/tackle-cli-5.3.1-20220513.111354-5-offline.zip
-RUN wget -qO /opt/windup.zip $MTA \
+ARG WINDUP=https://oss.sonatype.org/content/groups/public/org/jboss/windup/tackle-cli/5.3.1-SNAPSHOT/tackle-cli-5.3.1-20220727.093156-40-offline.zip
+RUN wget -qO /opt/windup.zip $WINDUP \
  && unzip /opt/windup.zip -d /opt \
  && rm /opt/windup.zip \
- && ln -s /opt/tackle-cli-5.3.1-SNAPSHOT/bin/mta-cli /opt/windup
+ && ln -s /opt/tackle-cli-5.3.1-SNAPSHOT/bin/windup-cli /opt/windup
 ENV HOME=/working \
     JAVA_HOME="/usr/lib/jvm/jre-11" \
     JAVA_VENDOR="openjdk" \
