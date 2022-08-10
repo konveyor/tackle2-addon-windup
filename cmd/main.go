@@ -86,6 +86,9 @@ func main() {
 			return
 		}
 		//
+		// The application has modules.
+		var hasModules bool
+		//
 		// Fetch repository.
 		if !d.Mode.Binary {
 			addon.Total(2)
@@ -113,6 +116,16 @@ func main() {
 				return
 			}
 			if d.Mode.WithDeps {
+				hasModules, err = maven.HasModules(SourceDir)
+				if err != nil {
+					return
+				}
+				if hasModules {
+					err = maven.InstallArtifacts(SourceDir)
+					if err != nil {
+						return
+					}
+				}
 				err = maven.Fetch(AppDir)
 				if err != nil {
 					return
@@ -133,6 +146,14 @@ func main() {
 			addon.Increment()
 		} else {
 			return
+		}
+		//
+		// Clean up.
+		if hasModules {
+			err = maven.DeleteArtifacts(SourceDir)
+			if err != nil {
+				return
+			}
 		}
 		return
 	})
