@@ -24,7 +24,7 @@ RUN microdnf -y install \
   subversion \
   maven \
  && microdnf -y clean all
-ARG WINDUP=https://oss.sonatype.org/content/groups/public/org/jboss/windup/tackle-cli/5.3.1-SNAPSHOT/tackle-cli-5.3.1-20220727.093156-40-offline.zip
+ARG WINDUP=https://repo1.maven.org/maven2/org/jboss/windup/tackle-cli/6.0.0.Final/tackle-cli-6.0.0.Final-offline.zip
 RUN wget -qO /opt/windup.zip $WINDUP \
  && unzip /opt/windup.zip -d /opt \
  && rm /opt/windup.zip \
