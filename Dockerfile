@@ -28,7 +28,7 @@ ARG WINDUP=https://repo1.maven.org/maven2/org/jboss/windup/tackle-cli/6.0.0.Fina
 RUN wget -qO /opt/windup.zip $WINDUP \
  && unzip /opt/windup.zip -d /opt \
  && rm /opt/windup.zip \
- && ln -s /opt/tackle-cli-5.3.1-SNAPSHOT/bin/windup-cli /opt/windup
+ && ln -s /opt/tackle-cli-6.0.0.Final/bin/windup-cli /opt/windup
 ENV HOME=/working \
     JAVA_HOME="/usr/lib/jvm/jre-11" \
     JAVA_VENDOR="openjdk" \
