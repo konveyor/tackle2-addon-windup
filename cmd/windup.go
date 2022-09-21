@@ -147,7 +147,6 @@ func (r *Mode) AddOptions(options *command.Options) (err error) {
 			options.Add("--input", pathlib.Dir(binDir))
 		}
 	} else {
-		options.Add("--sourceMode")
 		options.Add("--input", AppDir)
 	}
 	if r.Diva {
