@@ -1,4 +1,6 @@
 GOBIN ?= ${GOPATH}/bin
+IMG   ?= tackle2-addon-windup:latest
+CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
 
 all: cmd
 
@@ -8,5 +10,39 @@ fmt:
 vet:
 	go vet ./...
 
+build-image:
+	${CONTAINER_RUNTIME} build -t ${IMG} .
+
 cmd: fmt vet
 	go build -ldflags="-w -s" -o bin/addon github.com/konveyor/tackle2-addon-windup/cmd
+
+.PHONY: start-minikube
+START_MINIKUBE_SH = ./bin/start-minikube.sh
+start-minikube:
+ifeq (,$(wildcard $(START_MINIKUBE_SH)))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(START_MINIKUBE_SH)) ;\
+	curl -sSLo $(START_MINIKUBE_SH) https://raw.githubusercontent.com/konveyor/tackle2-operator/main/hack/start-minikube.sh ;\
+	chmod +x $(START_MINIKUBE_SH) ;\
+	}
+endif
+	$(START_MINIKUBE_SH);
+
+.PHONY: install-tackle
+INSTALL_TACKLE_SH = ./bin/install-tackle.sh
+install-tackle:
+ifeq (,$(wildcard $(INSTALL_TACKLE_SH)))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(INSTALL_TACKLE_SH)) ;\
+	curl -sSLo $(INSTALL_TACKLE_SH) https://raw.githubusercontent.com/konveyor/tackle2-operator/main/hack/install-tackle.sh ;\
+	chmod +x $(INSTALL_TACKLE_SH) ;\
+	}
+endif
+	export export TACKLE_ADDON_WINDUP_IMAGE=$(IMG); $(INSTALL_TACKLE_SH);
+
+.PHONY: test-e2e
+test-e2e: start-minikube build-image install-tackle; \
+	export HOST=http://$(shell minikube ip)/hub; \
+	bash hack/test-e2e.sh;
