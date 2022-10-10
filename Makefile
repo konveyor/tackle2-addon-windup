@@ -40,7 +40,7 @@ ifeq (,$(wildcard $(INSTALL_TACKLE_SH)))
 	chmod +x $(INSTALL_TACKLE_SH) ;\
 	}
 endif
-	export export TACKLE_ADDON_WINDUP_IMAGE=$(IMG); $(INSTALL_TACKLE_SH);
+	export TACKLE_ADDON_WINDUP_IMAGE=$(IMG); $(INSTALL_TACKLE_SH);
 
 .PHONY: test-e2e
 test-e2e: start-minikube build-image install-tackle; \
