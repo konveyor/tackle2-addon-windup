@@ -1,6 +1,6 @@
 GOBIN ?= ${GOPATH}/bin
 IMG   ?= tackle2-addon-windup:latest
-CONTAINER_RUNTIME := $(shell command -v podman 2> /dev/null || echo docker)
+CONTAINER_RUNTIME := docker
 
 all: cmd
 
@@ -40,9 +40,14 @@ ifeq (,$(wildcard $(INSTALL_TACKLE_SH)))
 	chmod +x $(INSTALL_TACKLE_SH) ;\
 	}
 endif
-	export export TACKLE_ADDON_WINDUP_IMAGE=$(IMG); $(INSTALL_TACKLE_SH);
+	export TACKLE_ADDON_WINDUP_IMAGE=$(IMG); $(INSTALL_TACKLE_SH);
 
 .PHONY: test-e2e
 test-e2e: start-minikube build-image install-tackle; \
+	export HOST=http://$(shell minikube ip)/hub; \
+	bash hack/test-e2e.sh;
+
+.PHONY: test-e2e-without-env-setup
+test-e2e-without-env-setup: 
 	export HOST=http://$(shell minikube ip)/hub; \
 	bash hack/test-e2e.sh;
