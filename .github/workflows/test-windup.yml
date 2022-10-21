@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: make build-image
+      - run: make podman-build
   test-e2e:
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +43,7 @@ jobs:
         run: |
           export SHELL=/bin/bash
           eval $(minikube -p minikube docker-env)
-          make build-image
+          make docker-build
       - name: install-tackle
         uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
         with:

@@ -10,8 +10,11 @@ fmt:
 vet:
 	go vet ./...
 
-build-image:
-	${CONTAINER_RUNTIME} build -t ${IMG} .
+docker-build:
+	docker build -t ${IMG} .
+
+podman-build:
+	podman build -t ${IMG} .
 
 cmd: fmt vet
 	go build -ldflags="-w -s" -o bin/addon github.com/konveyor/tackle2-addon-windup/cmd
