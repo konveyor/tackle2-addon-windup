@@ -47,7 +47,7 @@ jobs:
       - name: install-tackle
         uses: konveyor/tackle2-operator/.github/actions/install-tackle@main
         with:
-          tackle-hub-image: tackle2-addon-windup:latest
+          tackle-addon-windup-image: tackle2-addon-windup:latest
           tackle-image-pull-policy: IfNotPresent
       - name: Run End-to-End Tests
         run: make test-e2e
