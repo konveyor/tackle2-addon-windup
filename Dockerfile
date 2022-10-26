@@ -16,7 +16,15 @@ RUN echo -e "[WandiscoSVN]" \
  "\nbaseurl=http://opensource.wandisco.com/centos/6/svn-1.9/RPMS/$basearch/" \
  "\nenabled=1" \
  "\ngpgcheck=0" > /etc/yum.repos.d/wandisco.repo
-RUN microdnf -y install java-11-openjdk-headless openssh-clients unzip wget git subversion maven && microdnf -y clean all
+RUN microdnf -y install \
+java-11-openjdk-headless \
+openssh-clients \
+unzip \
+wget \
+git \
+subversion \
+maven \
+&& microdnf -y clean all
 ARG WINDUP=https://repo1.maven.org/maven2/org/jboss/windup/tackle-cli/6.1.0.Alpha1/tackle-cli-6.1.0.Alpha1-offline.zip
 RUN wget -qO /opt/windup.zip $WINDUP \
  && unzip /opt/windup.zip -d /opt \
