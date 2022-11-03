@@ -25,7 +25,7 @@ git \
 subversion \
 maven \
 && microdnf -y clean all
-ARG WINDUP=https://repo1.maven.org/maven2/org/jboss/windup/windup-cli/6.1.0.Final/windup-cli-6.1.0.Final-offline.zip
+ARG WINDUP=https://repo1.maven.org/maven2/org/jboss/windup/tackle-cli/6.1.0.Final/tackle-cli-6.1.0.Final-offline.zip
 RUN wget -qO /opt/windup.zip $WINDUP \
  && unzip /opt/windup.zip -d /opt \
  && rm /opt/windup.zip \
