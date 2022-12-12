@@ -345,6 +345,8 @@ github.com/konveyor/tackle2-addon v0.0.0-20221110153859-b6cf85c41389/go.mod h1:M
 github.com/konveyor/tackle2-hub v0.0.0-20220510102650-542558f3f9cb/go.mod h1:WcxWlSwZlupU0Lp00k6MfnkDR3vkk5Ba5Nq6jmViywk=
 github.com/konveyor/tackle2-hub v0.0.0-20221116220406-c0054328257d h1:QmdD0luoEOe4xQ1apzItn7HIxKSwKi0+/URTM+Rcvok=
 github.com/konveyor/tackle2-hub v0.0.0-20221116220406-c0054328257d/go.mod h1:/YlrzuavATpAvimbDMDW3w4tO45IAIsg9jSK48lTSr4=
+github.com/konveyor/tackle2-hub v0.0.0-20221212145536-afb6a9c97834 h1:4d9MpvFJ3I1OHRU5NV9LkrPvQiBNulYjjzUy3+Kmpog=
+github.com/konveyor/tackle2-hub v0.0.0-20221212145536-afb6a9c97834/go.mod h1:/YlrzuavATpAvimbDMDW3w4tO45IAIsg9jSK48lTSr4=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
