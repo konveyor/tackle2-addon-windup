@@ -4,27 +4,35 @@ import (
 	"github.com/konveyor/tackle2-addon/repository"
 	"github.com/konveyor/tackle2-addon/ssh"
 	hub "github.com/konveyor/tackle2-hub/addon"
+	"github.com/konveyor/tackle2-hub/nas"
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 var (
-	// hub integration.
-	addon = hub.Addon
-	// HomeDir directory.
+	addon     = hub.Addon
 	HomeDir   = ""
+	DepDir    = ""
 	BinDir    = ""
 	SourceDir = ""
 	AppDir    = ""
 	Dir       = ""
+	M2Dir     = ""
+	ReportDir = ""
+	RuleDir   = ""
 )
 
 func init() {
 	Dir, _ = os.Getwd()
 	HomeDir, _ = os.UserHomeDir()
 	SourceDir = path.Join(Dir, "source")
-	BinDir = path.Join(Dir, "dependencies")
+	DepDir = path.Join(Dir, "deps")
+	BinDir = path.Join(Dir, "bin")
+	ReportDir = path.Join(Dir, "report")
+	RuleDir = path.Join(Dir, "rules")
+	M2Dir = "/cache/m2"
 }
 
 type SoftError = hub.SoftError
@@ -59,6 +67,14 @@ func main() {
 			return
 		}
 		//
+		// Create directories.
+		for _, dir := range []string{BinDir, M2Dir, RuleDir, ReportDir} {
+			err = nas.MkDir(dir, 0755)
+			if err != nil {
+				return
+			}
+		}
+		//
 		// windup
 		windup := Windup{}
 		windup.Data = d
@@ -72,11 +88,23 @@ func main() {
 			return
 		}
 		//
+		// Delete report.
+		mark := time.Now()
+		bucket := addon.Application.Bucket(application.ID)
+		err = bucket.Delete(d.Output)
+		if err != nil {
+			return
+		}
+		addon.Activity(
+			"[BUCKET] Report deleted:%s duration:%v.",
+			d.Output,
+			time.Since(mark))
+		//
 		// Maven.
 		maven := repository.Maven{
 			Application: application,
-			M2Dir:       "/mnt/m2",
-			BinDir:      BinDir,
+			M2Dir:       M2Dir,
+			BinDir:      DepDir,
 		}
 		//
 		// SSH
@@ -97,7 +125,7 @@ func main() {
 				return
 			}
 			SourceDir = path.Join(
-				Dir,
+				SourceDir,
 				strings.Split(
 					path.Base(
 						application.Repository.URL),
@@ -147,6 +175,18 @@ func main() {
 		} else {
 			return
 		}
+		//
+		// Update report.
+		mark = time.Now()
+		bucket = addon.Application.Bucket(application.ID)
+		err = bucket.Put(ReportDir, d.Output)
+		if err != nil {
+			return
+		}
+		addon.Activity(
+			"[BUCKET} Report updated:%s duration:%v.",
+			d.Output,
+			time.Since(mark))
 		//
 		// Clean up.
 		if hasModules {
