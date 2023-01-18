@@ -2,11 +2,10 @@ package main
 
 import (
 	"bufio"
-	liberr "github.com/konveyor/controller/pkg/error"
 	"github.com/konveyor/tackle2-addon/command"
-	"github.com/konveyor/tackle2-addon/nas"
 	"github.com/konveyor/tackle2-addon/repository"
 	"github.com/konveyor/tackle2-hub/api"
+	"github.com/konveyor/tackle2-hub/nas"
 	"os"
 	pathlib "path"
 )
@@ -21,23 +20,7 @@ type Windup struct {
 //
 // Run windup.
 func (r *Windup) Run() (err error) {
-	output := r.output()
-	cmd := command.Command{Path: "/usr/bin/rm"}
-	cmd.Options.Add("-rf", output)
-	err = cmd.Run()
-	if err != nil {
-		return
-	}
-	err = os.MkdirAll(output, 0777)
-	if err != nil {
-		err = liberr.Wrap(
-			err,
-			"path",
-			output)
-		return
-	}
-	addon.Activity("[Windup] created: %s.", output)
-	cmd = command.Command{Path: "/opt/windup"}
+	cmd := command.Command{Path: "/opt/windup"}
 	cmd.Options, err = r.options()
 	if err != nil {
 		return
@@ -70,20 +53,12 @@ func (r *Windup) reportLog() {
 }
 
 //
-// output returns output directory.
-func (r *Windup) output() string {
-	return pathlib.Join(
-		r.application.Bucket,
-		r.Output)
-}
-
-//
 // options builds CLL options.
 func (r *Windup) options() (options command.Options, err error) {
 	options = command.Options{
 		"--batchMode",
 		"--output",
-		r.output(),
+		ReportDir,
 	}
 	err = r.maven(&options)
 	if err != nil {
@@ -121,9 +96,9 @@ func (r *Windup) options() (options command.Options, err error) {
 //
 // maven add --input for maven artifacts.
 func (r *Windup) maven(options *command.Options) (err error) {
-	found, err := nas.HasDir(BinDir)
+	found, err := nas.HasDir(DepDir)
 	if found {
-		options.Add("--input", BinDir)
+		options.Add("--input", DepDir)
 	}
 	return
 }
@@ -143,8 +118,12 @@ type Mode struct {
 func (r *Mode) AddOptions(options *command.Options) (err error) {
 	if r.Binary {
 		if r.Artifact != "" {
-			binDir := pathlib.Join(addon.Task.Bucket(), r.Artifact)
-			options.Add("--input", pathlib.Dir(binDir))
+			bucket := addon.Bucket()
+			err = bucket.Get(r.Artifact, BinDir)
+			if err != nil {
+				return
+			}
+			options.Add("--input", BinDir)
 		}
 	} else {
 		options.Add("--input", AppDir)
@@ -222,9 +201,12 @@ type Rules struct {
 func (r *Rules) AddOptions(options *command.Options) (err error) {
 	options.Add(
 		"--userRulesDirectory",
-		pathlib.Join(
-			addon.Task.Bucket(),
-			r.Path))
+		RuleDir)
+	bucket := addon.Bucket()
+	err = bucket.Get(r.Path, RuleDir)
+	if err != nil {
+		return
+	}
 	if len(r.Tags.Included) > 0 {
 		options.Add("--includeTags", r.Tags.Included...)
 	}

@@ -11,7 +11,6 @@ replace k8s.io/api => k8s.io/api v0.0.0-20181213150558-05914d821849
 replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20181213153335-0fe22c71c476
 
 require (
-	github.com/konveyor/controller v0.8.0
-	github.com/konveyor/tackle2-addon v0.0.0-20221110153859-b6cf85c41389
-	github.com/konveyor/tackle2-hub v0.0.0-20221116220406-c0054328257d
+	github.com/konveyor/tackle2-addon v0.0.0-20230118205230-1aba7c8edc09
+	github.com/konveyor/tackle2-hub v0.0.0-20230118203912-beb582e472d9
 )
