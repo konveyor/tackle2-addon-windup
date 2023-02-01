@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/konveyor/tackle2-addon/repository"
-	"github.com/konveyor/tackle2-addon/ssh"
-	hub "github.com/konveyor/tackle2-hub/addon"
-	"github.com/konveyor/tackle2-hub/nas"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/konveyor/tackle2-addon/repository"
+	"github.com/konveyor/tackle2-addon/ssh"
+	hub "github.com/konveyor/tackle2-hub/addon"
+	"github.com/konveyor/tackle2-hub/nas"
 )
 
 var (
@@ -144,12 +145,12 @@ func main() {
 				return
 			}
 			if d.Mode.WithDeps {
-				hasModules, err = maven.HasModules(SourceDir)
+				hasModules, err = maven.HasModules(AppDir)
 				if err != nil {
 					return
 				}
 				if hasModules {
-					err = maven.InstallArtifacts(SourceDir)
+					err = maven.InstallArtifacts(AppDir)
 					if err != nil {
 						return
 					}
