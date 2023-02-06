@@ -3,7 +3,7 @@
 set -o errexit
 set -o xtrace
 
-host="${HOST:-localhost:8080}"
+HOST="${HOST:-localhost:8080}"
 
 # Exit early if kubectl or jq not installed
 if ! command -v kubectl >/dev/null 2>&1; then
@@ -16,7 +16,7 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # Verify we can talk with hub first
-if ! curl -S -s -o /dev/null -X GET ${host}/addons/windup; then
+if ! timeout 300s bash -c "until curl -S -s -o /dev/null -X GET ${HOST}/addons/windup; do sleep 10; done"; then
   echo "Windup addon not found. Is the hub running?"
   exit 1
 fi
@@ -24,9 +24,9 @@ echo "Verified windup addon installed."
 
 # Create pathfinder app if it hasn't been added already
 # There is a constraint that only allows one application to have a particular name.
-if ! curl -S -s -X GET ${host}/applications | jq -e 'any(.[]; .name == "Pathfinder")'; then
+if ! curl -S -s -X GET ${HOST}/applications | jq -e 'any(.[]; .name == "Pathfinder")'; then
   echo "Creating pathfinder application"
-  curl -X POST ${host}/applications -d \
+  curl -X POST ${HOST}/applications -d \
     '{
         "name":"Pathfinder",
         "description": "Tackle Pathfinder application.",
@@ -37,13 +37,13 @@ if ! curl -S -s -X GET ${host}/applications | jq -e 'any(.[]; .name == "Pathfind
         }
     }' | jq -M .
 fi
-APP_ID=$(curl -S -s -X GET ${host}/applications | jq --raw-output '.[] | select(.name=="Pathfinder") | .id')
+APP_ID=$(curl -S -s -X GET ${HOST}/applications | jq --raw-output '.[] | select(.name=="Pathfinder") | .id')
 echo "Pathfinder exists with id ${APP_ID}"
 # Show the applications in the inventory
-curl -S -s -X GET ${host}/applications | jq
+curl -S -s -X GET ${HOST}/applications | jq
 
 # Make a request to hub
-TASK_ID=$(curl -S -s -X POST ${host}/tasks -d \
+TASK_ID=$(curl -S -s -X POST ${HOST}/tasks -d \
 '{
     "name":"Windup",
     "state": "Ready",
@@ -84,15 +84,15 @@ fi
 echo "Task created with id ${TASK_ID}"
 
 # Give windup ten minutes to finish
-if ! timeout 300s bash -c "until curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq -e '.state == \"Succeeded\"'; do sleep 30; done"; then
+if ! timeout 300s bash -c "until curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq -e '.state == \"Succeeded\"'; do sleep 30; done"; then
   echo "##########################################"
   echo "Windup task did not complete successfully"
   echo "##########################################"
   echo "Task details"
-  curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq
+  curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq
   echo "Including pod logs"
 
-  TASK_POD_NAMESPACED_NAME=$(curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq --raw-output .pod)
+  TASK_POD_NAMESPACED_NAME=$(curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq --raw-output .pod)
   TASK_POD_NAMESPACE="${TASK_POD_NAMESPACED_NAME%/*}"
   TASK_POD_NAME="${TASK_POD_NAMESPACED_NAME#*/}"
 
