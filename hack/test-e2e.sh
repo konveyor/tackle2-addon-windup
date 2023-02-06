@@ -10,7 +10,7 @@ fail_test() {
   APP_ID=$1
   TASK_ID=$2
 
-  set -o noerrexit
+  set +o errexit
 
   echo "######################"
   echo "Windup E2E Test Failed"
@@ -48,7 +48,7 @@ fail_test() {
   kubectl describe --namespace ${HUB_NAMESPACE} deployments
 
   echo "Logs from the hub"
-  kubectl logs --namespace ${HUB_NAMESPACE} deployments/tackle2-hub
+  kubectl logs --namespace ${HUB_NAMESPACE} deployments/tackle-hub
 
   exit 2
 }
@@ -64,17 +64,19 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # Verify we can talk with hub first
-if ! timeout 300s bash -c "until curl -S -s -o /dev/null -X GET ${HOST}/addons/windup; do sleep 10; done"; then
+if ! (timeout 300s bash -c "until curl -f -S -s -o /dev/null -X GET ${HOST}/addons/windup; do sleep 10; done" || false); then
   echo "Windup addon not found. Is the hub running?"
   fail_test "" ""
 fi
 echo "Verified windup addon installed."
 
 # Give tackle a minute to give us an application list
-if ! timeout 60s bash -c "until curl -S -s -X GET ${HOST}/applications; do sleep 10; done"; then
+# Having issues in testing where it could return 503
+if ! (timeout 300s bash -c "until curl -f -S -s -X GET ${HOST}/applications; do sleep 10; done" || false); then
   echo "Tackle won't give a list of applications"
   fail_test "" ""
 fi
+# At this point, if tackle isn't accepting requests...that's a problem.
 
 # Create pathfinder app if it hasn't been added already
 # There is a constraint that only allows one application to have a particular name.
@@ -136,7 +138,7 @@ fi
 echo "Task created with id ${TASK_ID}"
 
 # Give windup ten minutes to finish
-if ! timeout 300s bash -c "until curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq -e '.state == \"Succeeded\"'; do sleep 30; done"; then
+if ! (timeout 300s bash -c "until curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq -e '.state == \"Succeeded\"'; do sleep 30; done" || false); then
   fail_test ${APP_ID} ${TASK_ID}
 fi
 echo "Windup task completed successfully"
