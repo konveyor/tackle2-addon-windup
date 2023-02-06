@@ -84,13 +84,12 @@ fi
 echo "Task created with id ${TASK_ID}"
 
 # Give windup ten minutes to finish
-timeout 600s bash -c "until curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq -e '.state == \"Succeeded\"'; do sleep 30; done"
-
-curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq
-if [ $(curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq -e '.state == "Succeeded"') != "true" ]; then
+if ! timeout 300s bash -c "until curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq -e '.state == \"Succeeded\"'; do sleep 30; done"; then
   echo "##########################################"
   echo "Windup task did not complete successfully"
   echo "##########################################"
+  echo "Task details"
+  curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq
   echo "Including pod logs"
 
   TASK_POD_NAMESPACED_NAME=$(curl -S -s -X GET ${host}/tasks/${TASK_ID} | jq --raw-output .pod)
