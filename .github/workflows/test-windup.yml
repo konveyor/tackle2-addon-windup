@@ -42,6 +42,7 @@ jobs:
       - name: Build image in minikube
         run: |
           export SHELL=/bin/bash
+          export IMG=quay.io/konveyor/tackle2-addon-windup:$(git rev-parse --short HEAD)
           eval $(minikube -p minikube docker-env)
           make docker-build
       - name: install-tackle
@@ -50,4 +51,6 @@ jobs:
           tackle-addon-windup-image: tackle2-addon-windup:latest
           tackle-image-pull-policy: IfNotPresent
       - name: Run End-to-End Tests
-        run: make test-e2e
+        run: |
+          export HOST=$(minikube ip)/hub
+          make test-e2e

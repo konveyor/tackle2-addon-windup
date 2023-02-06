@@ -5,10 +5,6 @@ set -o xtrace
 
 host="${HOST:-localhost:8080}"
 
-# Port Forwarding
-# kubectl port-forward service/tackle-ui 8080:8080 -n konveyor-tackle > /dev/null 2>&1 &
-# pid=$!
-
 # Exit early if kubectl or jq not installed
 if ! command -v kubectl >/dev/null 2>&1; then
   echo "Please install kubectl"
