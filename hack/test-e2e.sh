@@ -4,6 +4,54 @@ set -o errexit
 set -o xtrace
 
 HOST="${HOST:-localhost:8080}"
+HUB_NAMESPACE="${HUB_NAMESPACE:-konveyor-tackle}"
+
+fail_test() {
+  APP_ID=$1
+  TASK_ID=$2
+
+  set -o noerrexit
+
+  echo "######################"
+  echo "Windup E2E Test Failed"
+  echo "######################"
+
+  echo "Addons"
+  curl -S -s -X GET ${HOST}/addons
+  echo
+  echo "Windup Addon"
+  curl -S -s -X GET ${HOST}/addons/windup
+  echo
+  echo "Applications"
+  curl -S -s -X GET ${HOST}/applications
+  if [ -n ${APP_ID} ] && [ "${APP_ID}" != "null" ]; then
+    echo
+    echo "# Pathfinder Application"
+    curl -S -s -X GET ${HOST}/applications/${APP_ID}
+  fi
+  if [ -n ${TASK_ID} ] && [ "${TASK_ID}" != "null" ]; then
+    echo
+    echo "# Task details"
+    curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq
+
+    echo
+    echo "# Pod logs"
+
+    TASK_POD_NAMESPACED_NAME=$(curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq --raw-output .pod)
+    TASK_POD_NAMESPACE="${TASK_POD_NAMESPACED_NAME%/*}"
+    TASK_POD_NAME="${TASK_POD_NAMESPACED_NAME#*/}"
+
+    kubectl logs --namespace ${TASK_POD_NAMESPACE} ${TASK_POD_NAME}
+  fi
+
+  echo "Every deployment in ${HUB_NAMESPACE}"
+  kubectl describe --namespace ${HUB_NAMESPACE} deployments
+
+  echo "Logs from the hub"
+  kubectl logs --namespace ${HUB_NAMESPACE} deployments/tackle2-hub
+
+  exit 2
+}
 
 # Exit early if kubectl or jq not installed
 if ! command -v kubectl >/dev/null 2>&1; then
@@ -18,9 +66,15 @@ fi
 # Verify we can talk with hub first
 if ! timeout 300s bash -c "until curl -S -s -o /dev/null -X GET ${HOST}/addons/windup; do sleep 10; done"; then
   echo "Windup addon not found. Is the hub running?"
-  exit 1
+  fail_test "" ""
 fi
 echo "Verified windup addon installed."
+
+# Give tackle a minute to give us an application list
+if ! timeout 60s bash -c "until curl -S -s -X GET ${HOST}/applications; do sleep 10; done"; then
+  echo "Tackle won't give a list of applications"
+  fail_test "" ""
+fi
 
 # Create pathfinder app if it hasn't been added already
 # There is a constraint that only allows one application to have a particular name.
@@ -33,8 +87,7 @@ if ! curl -S -s -X GET ${HOST}/applications | jq -e 'any(.[]; .name == "Pathfind
         "repository": {
           "name": "tackle-pathfinder",
           "url": "https://github.com/konveyor/tackle-pathfinder.git",
-          "branch": "1.2.0"
-        }
+          "branch": "1.2.0" }
     }' | jq -M .
 fi
 APP_ID=$(curl -S -s -X GET ${HOST}/applications | jq --raw-output '.[] | select(.name=="Pathfinder") | .id')
@@ -78,26 +131,12 @@ TASK_ID=$(curl -S -s -X POST ${HOST}/tasks -d \
     }
 }' | jq .id)
 if [ "${TASK_ID}" = "null" ]; then
-  echo "Failed to create task"
-  exit 1
+  fail_test ${APP_ID} ${TASK_ID}
 fi
 echo "Task created with id ${TASK_ID}"
 
 # Give windup ten minutes to finish
 if ! timeout 300s bash -c "until curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq -e '.state == \"Succeeded\"'; do sleep 30; done"; then
-  echo "##########################################"
-  echo "Windup task did not complete successfully"
-  echo "##########################################"
-  echo "Task details"
-  curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq
-  echo "Including pod logs"
-
-  TASK_POD_NAMESPACED_NAME=$(curl -S -s -X GET ${HOST}/tasks/${TASK_ID} | jq --raw-output .pod)
-  TASK_POD_NAMESPACE="${TASK_POD_NAMESPACED_NAME%/*}"
-  TASK_POD_NAME="${TASK_POD_NAMESPACED_NAME#*/}"
-
-  kubectl logs --namespace ${TASK_POD_NAMESPACE} ${TASK_POD_NAME}
-  echo "Task name: ${TASK_POD_NAME} namespace: ${TASK_POD_NAMESPACE}"
-  exit 0
+  fail_test ${APP_ID} ${TASK_ID}
 fi
 echo "Windup task completed successfully"
