@@ -1,5 +1,5 @@
 GOBIN ?= ${GOPATH}/bin
-IMG   ?= tackle2-addon-windup:latest
+IMG   ?= quay.io/konveyor/tackle2-addon-windup:latest
 
 all: cmd
 
@@ -43,8 +43,8 @@ ifeq (,$(wildcard $(INSTALL_TACKLE_SH)))
 	}
 endif
 	export TACKLE_ADDON_WINDUP_IMAGE=$(IMG); \
-    export TACKLE_IMAGE_PULL_POLICY='IfNotPresent'; \
-    $(INSTALL_TACKLE_SH);
+	export TACKLE_IMAGE_PULL_POLICY='IfNotPresent'; \
+	$(INSTALL_TACKLE_SH);
 
 .PHONY: test-e2e
 test-e2e:
