@@ -1,21 +1,16 @@
-FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12 as builder
+FROM registry.access.redhat.com/ubi9/go-toolset:latest as builder
 ENV GOPATH=$APP_ROOT
 COPY --chown=1001:0 . .
 RUN make cmd
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+FROM registry.access.redhat.com/ubi9/ubi-minimal
 USER root
 RUN microdnf -y update && microdnf -y clean all
-RUN echo -e "[centos8]" \
- "\nname = centos8" \
- "\nbaseurl = http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/" \
+RUN echo -e "[centos9]" \
+ "\nname = centos9" \
+ "\nbaseurl = http://mirror.stream.centos.org/9-stream/AppStream/\$basearch/os/" \
  "\nenabled = 1" \
  "\ngpgcheck = 0" > /etc/yum.repos.d/centos.repo
-RUN echo -e "[WandiscoSVN]" \
- "\nname=Wandisco SVN Repo" \
- "\nbaseurl=http://opensource.wandisco.com/centos/6/svn-1.9/RPMS/$basearch/" \
- "\nenabled=1" \
- "\ngpgcheck=0" > /etc/yum.repos.d/wandisco.repo
 RUN microdnf -y install \
 java-11-openjdk-headless \
 openssh-clients \
