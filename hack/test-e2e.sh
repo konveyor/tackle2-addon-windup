@@ -4,7 +4,7 @@ set -o errexit
 set -o xtrace
 
 HOST="${HOST:-localhost:8080}"
-HUB_NAMESPACE="${HUB_NAMESPACE:-konveyor-tackle}"
+NAMESPACE="${NAMESPACE:-konveyor-tackle}"
 
 fail_test() {
   APP_ID=$1
@@ -44,11 +44,11 @@ fail_test() {
     kubectl logs --namespace ${TASK_POD_NAMESPACE} ${TASK_POD_NAME}
   fi
 
-  echo "Every deployment in ${HUB_NAMESPACE}"
-  kubectl describe --namespace ${HUB_NAMESPACE} deployments
+  echo "Every deployment in ${NAMESPACE}"
+  kubectl describe --namespace ${NAMESPACE} deployments
 
   echo "Logs from the hub"
-  kubectl logs --namespace ${HUB_NAMESPACE} deployments/tackle-hub
+  kubectl logs --namespace ${NAMESPACE} deployments/tackle-hub
 
   exit 2
 }

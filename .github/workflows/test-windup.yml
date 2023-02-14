@@ -53,4 +53,5 @@ jobs:
       - name: Run End-to-End Tests
         run: |
           export HOST=$(minikube ip)/hub
+          export NAMESPACE=$(kubectl get tackles.tackle.konveyor.io --all-namespaces --no-headers | awk '{print $1}')
           make test-e2e
