@@ -8,6 +8,7 @@ import (
 	"github.com/konveyor/tackle2-hub/nas"
 	"os"
 	pathlib "path"
+	"strconv"
 	"strings"
 )
 
@@ -202,7 +203,7 @@ type Rules struct {
 //
 // AddOptions adds windup options.
 func (r *Rules) AddOptions(options *command.Options) (err error) {
-	ruleDir := pathlib.Join(RuleDir, "/rules/files")
+	ruleDir := pathlib.Join(RuleDir, "/files")
 	err = nas.MkDir(ruleDir, 0755)
 	if err != nil {
 		return
@@ -259,7 +260,7 @@ func (r *Rules) addRuleSets(options *command.Options, bundle *api.RuleBundle) (e
 	ruleDir := pathlib.Join(
 		RuleDir,
 		"/bundles",
-		bundle.Name,
+		strconv.Itoa(int(bundle.ID)),
 		"rulesets")
 	err = nas.MkDir(ruleDir, 0755)
 	if err != nil {
@@ -270,16 +271,15 @@ func (r *Rules) addRuleSets(options *command.Options, bundle *api.RuleBundle) (e
 		ruleDir)
 	for _, ruleset := range bundle.RuleSets {
 		fileRef := ruleset.File
-		if fileRef != nil {
+		if fileRef == nil {
 			continue
 		}
 		name := strings.Join(
 			[]string{
-				ruleDir,
-				ruleset.Name,
+				strconv.Itoa(int(ruleset.ID)),
 				fileRef.Name},
 			"-")
-		path := pathlib.Join(RuleDir, name)
+		path := pathlib.Join(ruleDir, name)
 		addon.Activity("[FILE] Get rule: %s", path)
 		err = addon.File.Get(ruleset.File.ID, path)
 		if err != nil {
@@ -298,7 +298,7 @@ func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBu
 	rootDir := pathlib.Join(
 		RuleDir,
 		"/bundles",
-		bundle.Name,
+		strconv.Itoa(int(bundle.ID)),
 		"repository")
 	err = nas.MkDir(rootDir, 0755)
 	if err != nil {
@@ -309,7 +309,7 @@ func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBu
 	if bundle.Identity != nil {
 		owner.Identities = []api.Ref{*bundle.Identity}
 	}
-	rp, err := repository.New(rootDir, &api.Application{})
+	rp, err := repository.New(rootDir, owner)
 	if err != nil {
 		return
 	}
@@ -350,7 +350,6 @@ func (r *Rules) addRepository(options *command.Options) (err error) {
 	}
 	rootDir := pathlib.Join(
 		RuleDir,
-		"/rules",
 		"repository")
 	err = nas.MkDir(rootDir, 0755)
 	if err != nil {
@@ -361,7 +360,7 @@ func (r *Rules) addRepository(options *command.Options) (err error) {
 	if r.Repository.Identity != nil {
 		owner.Identities = []api.Ref{*r.Repository.Identity}
 	}
-	rp, err := repository.New(rootDir, &api.Application{})
+	rp, err := repository.New(rootDir, owner)
 	if err != nil {
 		return
 	}
