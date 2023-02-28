@@ -191,9 +191,10 @@ func (r *Scope) AddOptions(options *command.Options) (err error) {
 //
 // Rules settings.
 type Rules struct {
-	Path       string      `json:"path" binding:"required"`
-	Bundles    []api.Ref   `json:"bundles"`
-	Repository *Repository `json:"repository"`
+	Path       string          `json:"path" binding:"required"`
+	Bundles    []api.Ref       `json:"bundles"`
+	Repository *api.Repository `json:"repository"`
+	Identity   *api.Ref        `json:"identity"`
 	Tags       struct {
 		Included []string `json:"included,omitempty"`
 		Excluded []string `json:"excluded,omitempty"`
@@ -356,9 +357,9 @@ func (r *Rules) addRepository(options *command.Options) (err error) {
 		return
 	}
 	owner := &api.Application{}
-	owner.Repository = &r.Repository.Repository
-	if r.Repository.Identity != nil {
-		owner.Identities = []api.Ref{*r.Repository.Identity}
+	owner.Repository = r.Repository
+	if r.Identity != nil {
+		owner.Identities = []api.Ref{*r.Identity}
 	}
 	rp, err := repository.New(rootDir, owner)
 	if err != nil {
@@ -391,11 +392,4 @@ func (r *Rules) addRepository(options *command.Options) (err error) {
 		}
 	}
 	return
-}
-
-//
-// Repository definition.
-type Repository struct {
-	api.Repository
-	Identity *api.Ref `json:"identity"`
 }
