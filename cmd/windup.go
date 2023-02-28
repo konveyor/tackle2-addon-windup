@@ -190,9 +190,10 @@ func (r *Scope) AddOptions(options *command.Options) (err error) {
 //
 // Rules settings.
 type Rules struct {
-	Path    string    `json:"path" binding:"required"`
-	Bundles []api.Ref `json:"bundles"`
-	Tags    struct {
+	Path       string      `json:"path" binding:"required"`
+	Bundles    []api.Ref   `json:"bundles"`
+	Repository *Repository `json:"repository"`
+	Tags       struct {
 		Included []string `json:"included,omitempty"`
 		Excluded []string `json:"excluded,omitempty"`
 	} `json:"tags"`
@@ -201,7 +202,7 @@ type Rules struct {
 //
 // AddOptions adds windup options.
 func (r *Rules) AddOptions(options *command.Options) (err error) {
-	ruleDir := pathlib.Join(RuleDir, "/rules")
+	ruleDir := pathlib.Join(RuleDir, "/rules/files")
 	err = nas.MkDir(ruleDir, 0755)
 	if err != nil {
 		return
@@ -211,6 +212,10 @@ func (r *Rules) AddOptions(options *command.Options) (err error) {
 		ruleDir)
 	bucket := addon.Bucket()
 	err = bucket.Get(r.Path, ruleDir)
+	if err != nil {
+		return
+	}
+	err = r.addRepository(options)
 	if err != nil {
 		return
 	}
@@ -240,7 +245,7 @@ func (r *Rules) addBundles(options *command.Options) (err error) {
 		if err != nil {
 			return
 		}
-		err = r.addRepository(options, bundle)
+		err = r.addBundleRepository(options, bundle)
 		if err != nil {
 			return
 		}
@@ -285,8 +290,8 @@ func (r *Rules) addRuleSets(options *command.Options, bundle *api.RuleBundle) (e
 }
 
 //
-// addRuleSets adds (repository) ruleSets
-func (r *Rules) addRepository(options *command.Options, bundle *api.RuleBundle) (err error) {
+// addBundleRepository adds bundle repository.
+func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBundle) (err error) {
 	if bundle.Repository == nil {
 		return
 	}
@@ -312,9 +317,7 @@ func (r *Rules) addRepository(options *command.Options, bundle *api.RuleBundle) 
 	if err != nil {
 		return
 	}
-	ruleDir := pathlib.Join(
-		rootDir,
-		bundle.Repository.Path)
+	ruleDir := pathlib.Join(rootDir, bundle.Repository.Path)
 	options.Add(
 		"--userRulesDirectory",
 		ruleDir)
@@ -337,4 +340,63 @@ func (r *Rules) addRepository(options *command.Options, bundle *api.RuleBundle) 
 		}
 	}
 	return
+}
+
+//
+// addRepository adds custom repository.
+func (r *Rules) addRepository(options *command.Options) (err error) {
+	if r.Repository == nil {
+		return
+	}
+	rootDir := pathlib.Join(
+		RuleDir,
+		"/rules",
+		"repository")
+	err = nas.MkDir(rootDir, 0755)
+	if err != nil {
+		return
+	}
+	owner := &api.Application{}
+	owner.Repository = &r.Repository.Repository
+	if r.Repository.Identity != nil {
+		owner.Identities = []api.Ref{*r.Repository.Identity}
+	}
+	rp, err := repository.New(rootDir, &api.Application{})
+	if err != nil {
+		return
+	}
+	err = rp.Fetch()
+	if err != nil {
+		return
+	}
+	ruleDir := pathlib.Join(rootDir, r.Repository.Path)
+	options.Add(
+		"--userRulesDirectory",
+		ruleDir)
+	entries, err := os.ReadDir(ruleDir)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		ext := ".windup.xml"
+		if !strings.HasSuffix(entry.Name(), ext) {
+			addon.Activity(
+				"[WARNING] File %s without extension (%s) ignored.",
+				pathlib.Join(
+					ruleDir,
+					entry.Name()),
+				ext)
+		}
+	}
+	return
+}
+
+//
+// Repository definition.
+type Repository struct {
+	api.Repository
+	Identity *api.Ref `json:"identity"`
 }
