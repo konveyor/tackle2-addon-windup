@@ -110,6 +110,7 @@ type Mode struct {
 	Artifact   string `json:"artifact"`
 	WithDeps   bool   `json:"withDeps"`
 	Diva       bool   `json:"diva"`
+	CSV        bool   `json:"csv"`
 	Repository repository.Repository
 }
 
@@ -130,6 +131,9 @@ func (r *Mode) AddOptions(options *command.Options) (err error) {
 	}
 	if r.Diva {
 		options.Add("--enableTransactionAnalysis")
+	}
+	if r.CSV {
+		options.Add("--exportCSV")
 	}
 
 	return
