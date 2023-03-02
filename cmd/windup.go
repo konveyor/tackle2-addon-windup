@@ -8,6 +8,8 @@ import (
 	"github.com/konveyor/tackle2-hub/nas"
 	"os"
 	pathlib "path"
+	"strconv"
+	"strings"
 )
 
 //
@@ -193,8 +195,11 @@ func (r *Scope) AddOptions(options *command.Options) (err error) {
 //
 // Rules settings.
 type Rules struct {
-	Path string `json:"path" binding:"required"`
-	Tags struct {
+	Path       string          `json:"path" binding:"required"`
+	Bundles    []api.Ref       `json:"bundles"`
+	Repository *api.Repository `json:"repository"`
+	Identity   *api.Ref        `json:"identity"`
+	Tags       struct {
 		Included []string `json:"included,omitempty"`
 		Excluded []string `json:"excluded,omitempty"`
 	} `json:"tags"`
@@ -203,11 +208,24 @@ type Rules struct {
 //
 // AddOptions adds windup options.
 func (r *Rules) AddOptions(options *command.Options) (err error) {
+	ruleDir := pathlib.Join(RuleDir, "/files")
+	err = nas.MkDir(ruleDir, 0755)
+	if err != nil {
+		return
+	}
 	options.Add(
 		"--userRulesDirectory",
-		RuleDir)
+		ruleDir)
 	bucket := addon.Bucket()
-	err = bucket.Get(r.Path, RuleDir)
+	err = bucket.Get(r.Path, ruleDir)
+	if err != nil {
+		return
+	}
+	err = r.addRepository(options)
+	if err != nil {
+		return
+	}
+	err = r.addBundles(options)
 	if err != nil {
 		return
 	}
@@ -216,6 +234,166 @@ func (r *Rules) AddOptions(options *command.Options) (err error) {
 	}
 	if len(r.Tags.Excluded) > 0 {
 		options.Add("--excludeTags", r.Tags.Excluded...)
+	}
+	return
+}
+
+//
+// AddBundles adds bundles.
+func (r *Rules) addBundles(options *command.Options) (err error) {
+	for _, ref := range r.Bundles {
+		var bundle *api.RuleBundle
+		bundle, err = addon.RuleBundle.Get(ref.ID)
+		if err != nil {
+			return
+		}
+		err = r.addRuleSets(options, bundle)
+		if err != nil {
+			return
+		}
+		err = r.addBundleRepository(options, bundle)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+//
+// addRuleSets adds ruleSets
+func (r *Rules) addRuleSets(options *command.Options, bundle *api.RuleBundle) (err error) {
+	ruleDir := pathlib.Join(
+		RuleDir,
+		"/bundles",
+		strconv.Itoa(int(bundle.ID)),
+		"rulesets")
+	err = nas.MkDir(ruleDir, 0755)
+	if err != nil {
+		return
+	}
+	options.Add(
+		"--userRulesDirectory",
+		ruleDir)
+	for _, ruleset := range bundle.RuleSets {
+		fileRef := ruleset.File
+		if fileRef == nil {
+			continue
+		}
+		name := strings.Join(
+			[]string{
+				strconv.Itoa(int(ruleset.ID)),
+				fileRef.Name},
+			"-")
+		path := pathlib.Join(ruleDir, name)
+		addon.Activity("[FILE] Get rule: %s", path)
+		err = addon.File.Get(ruleset.File.ID, path)
+		if err != nil {
+			break
+		}
+	}
+	return
+}
+
+//
+// addBundleRepository adds bundle repository.
+func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBundle) (err error) {
+	if bundle.Repository == nil {
+		return
+	}
+	rootDir := pathlib.Join(
+		RuleDir,
+		"/bundles",
+		strconv.Itoa(int(bundle.ID)),
+		"repository")
+	err = nas.MkDir(rootDir, 0755)
+	if err != nil {
+		return
+	}
+	owner := &api.Application{}
+	owner.Repository = bundle.Repository
+	if bundle.Identity != nil {
+		owner.Identities = []api.Ref{*bundle.Identity}
+	}
+	rp, err := repository.New(rootDir, owner)
+	if err != nil {
+		return
+	}
+	err = rp.Fetch()
+	if err != nil {
+		return
+	}
+	ruleDir := pathlib.Join(rootDir, bundle.Repository.Path)
+	options.Add(
+		"--userRulesDirectory",
+		ruleDir)
+	entries, err := os.ReadDir(ruleDir)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		ext := ".windup.xml"
+		if !strings.HasSuffix(entry.Name(), ext) {
+			addon.Activity(
+				"[WARNING] File %s without extension (%s) ignored.",
+				pathlib.Join(
+					ruleDir,
+					entry.Name()),
+				ext)
+		}
+	}
+	return
+}
+
+//
+// addRepository adds custom repository.
+func (r *Rules) addRepository(options *command.Options) (err error) {
+	if r.Repository == nil {
+		return
+	}
+	rootDir := pathlib.Join(
+		RuleDir,
+		"repository")
+	err = nas.MkDir(rootDir, 0755)
+	if err != nil {
+		return
+	}
+	owner := &api.Application{}
+	owner.Repository = r.Repository
+	if r.Identity != nil {
+		owner.Identities = []api.Ref{*r.Identity}
+	}
+	rp, err := repository.New(rootDir, owner)
+	if err != nil {
+		return
+	}
+	err = rp.Fetch()
+	if err != nil {
+		return
+	}
+	ruleDir := pathlib.Join(rootDir, r.Repository.Path)
+	options.Add(
+		"--userRulesDirectory",
+		ruleDir)
+	entries, err := os.ReadDir(ruleDir)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		ext := ".windup.xml"
+		if !strings.HasSuffix(entry.Name(), ext) {
+			addon.Activity(
+				"[WARNING] File %s without extension (%s) ignored.",
+				pathlib.Join(
+					ruleDir,
+					entry.Name()),
+				ext)
+		}
 	}
 	return
 }
