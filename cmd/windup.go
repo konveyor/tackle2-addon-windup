@@ -66,6 +66,10 @@ func (r *Windup) options() (options command.Options, err error) {
 	if err != nil {
 		return
 	}
+	err = r.Tagger.AddOptions(&options)
+	if err != nil {
+		return
+	}
 	err = r.Mode.AddOptions(&options)
 	if err != nil {
 		return
