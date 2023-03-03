@@ -53,6 +53,8 @@ type Data struct {
 	Scope Scope `json:"scope"`
 	// Rules options.
 	Rules *Rules `json:"rules"`
+	// Tagger options.
+	Tagger Tagger `json:"tagger"`
 }
 
 //
@@ -185,13 +187,21 @@ func main() {
 			return
 		}
 		addon.Activity(
-			"[BUCKET} Report updated:%s duration:%v.",
+			"[BUCKET] Report updated:%s duration:%v.",
 			d.Output,
 			time.Since(mark))
 		//
 		// Clean up.
 		if hasModules {
 			err = maven.DeleteArtifacts(SourceDir)
+			if err != nil {
+				return
+			}
+		}
+		//
+		// Tagging.
+		if d.Tagger.Enabled {
+			err = d.Tagger.Update(application.ID)
 			if err != nil {
 				return
 			}
