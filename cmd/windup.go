@@ -2,15 +2,46 @@ package main
 
 import (
 	"bufio"
+	"encoding/xml"
 	"github.com/konveyor/tackle2-addon/command"
 	"github.com/konveyor/tackle2-addon/repository"
 	"github.com/konveyor/tackle2-hub/api"
 	"github.com/konveyor/tackle2-hub/nas"
+	"io/ioutil"
 	"os"
 	pathlib "path"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
+
+//
+// EmptyRuleSet provides an empty ruleset.
+// Windup requires at least 1 target passed.
+var (
+	EmptyRuleSet = `
+<?xml version="1.0"?>
+<ruleset id="Empty"
+    xmlns="http://windup.jboss.org/schema/jboss-ruleset"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://windup.jboss.org/schema/jboss-ruleset http://windup.jboss.org/schema/jboss-ruleset/windup-jboss-ruleset.xsd">
+    <metadata>
+        <targetTechnology id="Empty"/>
+    </metadata>
+    <rules/>
+</ruleset>
+`
+)
+
+//
+// RuleSet an XML document.
+type RuleSet struct {
+	Metadata struct {
+		Target struct {
+			ID string `xml:"id,attr"`
+		} `xml:"targetTechnology"`
+	} `xml:"metadata"`
+}
 
 //
 // Windup application analyzer.
@@ -74,6 +105,15 @@ func (r *Windup) options() (options command.Options, err error) {
 	if err != nil {
 		return
 	}
+	if r.Rules != nil {
+		err = r.Rules.AddOptions(&options)
+		if err != nil {
+			return
+		}
+		r.Targets = append(
+			r.Targets,
+			r.Rules.foundTargets...)
+	}
 	if r.Sources != nil {
 		err = r.Sources.AddOptions(&options)
 		if err != nil {
@@ -89,12 +129,6 @@ func (r *Windup) options() (options command.Options, err error) {
 	err = r.Scope.AddOptions(&options)
 	if err != nil {
 		return
-	}
-	if r.Rules != nil {
-		err = r.Rules.AddOptions(&options)
-		if err != nil {
-			return
-		}
 	}
 	return
 }
@@ -165,8 +199,46 @@ type Targets []string
 //
 // AddOptions add options.
 func (r Targets) AddOptions(options *command.Options) (err error) {
+	if len(r) == 0 {
+		err = r.addEmpty(options)
+		return
+	}
 	for _, target := range r {
 		options.Add("--target", target)
+	}
+	return
+}
+
+//
+// addEmpty adds the empty target/ruleset.
+func (r Targets) addEmpty(options *command.Options) (err error) {
+	ruleDir := pathlib.Join(RuleDir, "/empty")
+	err = nas.MkDir(ruleDir, 0755)
+	if err != nil {
+		return
+	}
+	options.Add(
+		"--userRulesDirectory",
+		ruleDir)
+	ruleSet := &RuleSet{}
+	err = xml.Unmarshal([]byte(EmptyRuleSet), ruleSet)
+	if err != nil {
+		return
+	}
+	options.Add(
+		"--target",
+		ruleSet.Metadata.Target.ID)
+	path := pathlib.Join(ruleDir, "empty.windup.xml")
+	f, err := os.Create(path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+	_, err = f.WriteString(EmptyRuleSet)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -207,21 +279,13 @@ type Rules struct {
 		Included []string `json:"included,omitempty"`
 		Excluded []string `json:"excluded,omitempty"`
 	} `json:"tags"`
+	foundTargets []string
 }
 
 //
 // AddOptions adds windup options.
 func (r *Rules) AddOptions(options *command.Options) (err error) {
-	ruleDir := pathlib.Join(RuleDir, "/files")
-	err = nas.MkDir(ruleDir, 0755)
-	if err != nil {
-		return
-	}
-	options.Add(
-		"--userRulesDirectory",
-		ruleDir)
-	bucket := addon.Bucket()
-	err = bucket.Get(r.Path, ruleDir)
+	err = r.addFiles(options)
 	if err != nil {
 		return
 	}
@@ -238,6 +302,28 @@ func (r *Rules) AddOptions(options *command.Options) (err error) {
 	}
 	if len(r.Tags.Excluded) > 0 {
 		options.Add("--excludeTags", r.Tags.Excluded...)
+	}
+	return
+}
+
+//
+// addFiles add uploaded rules files.
+func (r *Rules) addFiles(options *command.Options) (err error) {
+	if r.Path == "" {
+		return
+	}
+	ruleDir := pathlib.Join(RuleDir, "/files")
+	err = nas.MkDir(ruleDir, 0755)
+	if err != nil {
+		return
+	}
+	options.Add(
+		"--userRulesDirectory",
+		ruleDir)
+	bucket := addon.Bucket()
+	err = bucket.Get(r.Path, ruleDir)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -275,9 +361,7 @@ func (r *Rules) addRuleSets(options *command.Options, bundle *api.RuleBundle) (e
 	if err != nil {
 		return
 	}
-	options.Add(
-		"--userRulesDirectory",
-		ruleDir)
+	files := 0
 	for _, ruleset := range bundle.RuleSets {
 		fileRef := ruleset.File
 		if fileRef == nil {
@@ -294,6 +378,12 @@ func (r *Rules) addRuleSets(options *command.Options, bundle *api.RuleBundle) (e
 		if err != nil {
 			break
 		}
+		files++
+	}
+	if files > 0 {
+		options.Add(
+			"--userRulesDirectory",
+			ruleDir)
 	}
 	return
 }
@@ -330,23 +420,9 @@ func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBu
 	options.Add(
 		"--userRulesDirectory",
 		ruleDir)
-	entries, err := os.ReadDir(ruleDir)
+	err = r.FindTargets(ruleDir)
 	if err != nil {
 		return
-	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		ext := ".windup.xml"
-		if !strings.HasSuffix(entry.Name(), ext) {
-			addon.Activity(
-				"[WARNING] File %s without extension (%s) ignored.",
-				pathlib.Join(
-					ruleDir,
-					entry.Name()),
-				ext)
-		}
 	}
 	return
 }
@@ -381,23 +457,54 @@ func (r *Rules) addRepository(options *command.Options) (err error) {
 	options.Add(
 		"--userRulesDirectory",
 		ruleDir)
-	entries, err := os.ReadDir(ruleDir)
+	err = r.FindTargets(ruleDir)
 	if err != nil {
 		return
 	}
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-		ext := ".windup.xml"
-		if !strings.HasSuffix(entry.Name(), ext) {
-			addon.Activity(
-				"[WARNING] File %s without extension (%s) ignored.",
-				pathlib.Join(
-					ruleDir,
-					entry.Name()),
-				ext)
-		}
+	return
+}
+
+//
+// FindTargets find targets in ruleSets.
+// Report invalid files.
+func (r *Rules) FindTargets(path string) (err error) {
+	err = filepath.Walk(
+		path,
+		func(path string, info os.FileInfo, wErr error) (err error) {
+			if info.IsDir() {
+				if info.Name()[0] == '.' {
+					err = filepath.SkipDir
+				}
+				return
+			}
+			if !strings.HasSuffix(info.Name(), ".windup.xml") {
+				addon.Activity(
+					"[WARNING] File: %s without extension (.windup.xml) ignored.",
+					path)
+				return
+			}
+			b, err := ioutil.ReadFile(path)
+			if err != nil {
+				return
+			}
+			ruleSet := &RuleSet{}
+			xErr := xml.Unmarshal(b, ruleSet)
+			if xErr != nil {
+				addon.Activity(
+					"[WARNING] File: %s XML not valid, ignored.",
+					path)
+				return
+			}
+			id := ruleSet.Metadata.Target.ID
+			if id != "" {
+				r.foundTargets = append(
+					r.foundTargets,
+					id)
+			}
+			return
+		})
+	if err != nil {
+		return
 	}
 	return
 }
