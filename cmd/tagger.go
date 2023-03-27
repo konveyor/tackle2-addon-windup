@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/konveyor/tackle2-addon/command"
 	"github.com/konveyor/tackle2-hub/api"
 	"io"
@@ -90,9 +89,8 @@ func (r *Tagger) ensureCategories(report []Summary) (mp map[string]uint, err err
 			wanted = append(
 				wanted,
 				api.TagCategory{
-					Name:  name,
-					Color: r.nextColor(),
-					Rank:  uint(rand.Intn(10)),
+					Name: name,
+					Rank: uint(rand.Intn(10)),
 				})
 		}
 	}
@@ -144,16 +142,6 @@ func (r *Tagger) ensureAssociated(appID uint, wanted []uint) (err error) {
 	tags := addon.Application.Tags(appID)
 	tags.Source("Analysis")
 	err = tags.Replace(wanted)
-	return
-}
-
-//
-// nextColor generates random colors.
-func (r *Tagger) nextColor() (color string) {
-	R := rand.Intn(255)
-	G := rand.Intn(255)
-	B := rand.Intn(255)
-	color = fmt.Sprintf("#%.2x%.2x%.2x", R, G, B)
 	return
 }
 
