@@ -105,9 +105,12 @@ func main() {
 		//
 		// Maven.
 		maven := repository.Maven{
-			Application: application,
-			M2Dir:       M2Dir,
-			BinDir:      DepDir,
+			M2Dir:  M2Dir,
+			BinDir: DepDir,
+			Remote: repository.Remote{
+				Repository: application.Repository,
+				Identities: application.Identities,
+			},
 		}
 		//
 		// SSH
@@ -134,8 +137,11 @@ func main() {
 						application.Repository.URL),
 					".")[0])
 			AppDir = path.Join(SourceDir, application.Repository.Path)
-			var r repository.Repository
-			r, err = repository.New(SourceDir, application)
+			var r repository.SCM
+			r, err = repository.New(
+				SourceDir,
+				application.Repository,
+				application.Identities)
 			if err != nil {
 				return
 			}

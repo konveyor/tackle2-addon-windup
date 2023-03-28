@@ -151,7 +151,7 @@ type Mode struct {
 	WithDeps   bool   `json:"withDeps"`
 	Diva       bool   `json:"diva"`
 	CSV        bool   `json:"csv"`
-	Repository repository.Repository
+	Repository repository.SCM
 }
 
 //
@@ -403,12 +403,10 @@ func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBu
 	if err != nil {
 		return
 	}
-	owner := &api.Application{}
-	owner.Repository = bundle.Repository
-	if bundle.Identity != nil {
-		owner.Identities = []api.Ref{*bundle.Identity}
-	}
-	rp, err := repository.New(rootDir, owner)
+	rp, err := repository.New(
+		rootDir,
+		bundle.Repository,
+		[]api.Ref{*bundle.Identity})
 	if err != nil {
 		return
 	}
@@ -440,12 +438,10 @@ func (r *Rules) addRepository(options *command.Options) (err error) {
 	if err != nil {
 		return
 	}
-	owner := &api.Application{}
-	owner.Repository = r.Repository
-	if r.Identity != nil {
-		owner.Identities = []api.Ref{*r.Identity}
-	}
-	rp, err := repository.New(rootDir, owner)
+	rp, err := repository.New(
+		rootDir,
+		r.Repository,
+		[]api.Ref{*r.Identity})
 	if err != nil {
 		return
 	}
