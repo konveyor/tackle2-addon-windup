@@ -471,6 +471,10 @@ func (r *Rules) FindTargets(path string) (err error) {
 	err = filepath.Walk(
 		path,
 		func(path string, info os.FileInfo, wErr error) (err error) {
+			if wErr != nil {
+				err = wErr
+				return
+			}
 			if info.IsDir() {
 				if info.Name()[0] == '.' {
 					err = filepath.SkipDir
