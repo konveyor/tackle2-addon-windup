@@ -170,7 +170,7 @@ func main() {
 			}
 		} else {
 			if d.Mode.Artifact == "" {
-				err = maven.FetchArtifact()
+				err = maven.FetchArtifact(application.Binary)
 				if err != nil {
 					return
 				}
