@@ -19,8 +19,7 @@ import (
 // EmptyRuleSet provides an empty ruleset.
 // Windup requires at least 1 target passed.
 var (
-	EmptyRuleSet = `
-<?xml version="1.0"?>
+	EmptyRuleSet = `<?xml version="1.0"?>
 <ruleset id="Empty"
     xmlns="http://windup.jboss.org/schema/jboss-ruleset"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -29,8 +28,7 @@ var (
         <targetTechnology id="Empty"/>
     </metadata>
     <rules/>
-</ruleset>
-`
+</ruleset>`
 )
 
 //
