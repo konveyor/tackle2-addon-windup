@@ -402,10 +402,14 @@ func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBu
 	if err != nil {
 		return
 	}
+	var ids []api.Ref
+	if bundle.Identity != nil {
+		ids = []api.Ref{*bundle.Identity}
+	}
 	rp, err := repository.New(
 		rootDir,
 		bundle.Repository,
-		[]api.Ref{*bundle.Identity})
+		ids)
 	if err != nil {
 		return
 	}
@@ -437,10 +441,14 @@ func (r *Rules) addRepository(options *command.Options) (err error) {
 	if err != nil {
 		return
 	}
+	var ids []api.Ref
+	if r.Identity != nil {
+		ids = []api.Ref{*r.Identity}
+	}
 	rp, err := repository.New(
 		rootDir,
 		r.Repository,
-		[]api.Ref{*r.Identity})
+		ids)
 	if err != nil {
 		return
 	}
