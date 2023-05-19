@@ -105,6 +105,7 @@ func (r *Windup) options() (options command.Options, err error) {
 		return
 	}
 	if r.Rules != nil {
+		r.xlateLabels()
 		err = r.Rules.AddOptions(&options)
 		if err != nil {
 			return
@@ -129,7 +130,33 @@ func (r *Windup) options() (options command.Options, err error) {
 	if err != nil {
 		return
 	}
+
 	return
+}
+
+//
+// xlateLabels translates labels into sources and targets.
+func (r *Windup) xlateLabels() {
+	for _, s := range r.Rules.Labels {
+		part := strings.SplitN(s, "/", 2)
+		if len(part) != 2 {
+			continue
+		}
+		part = strings.SplitN(part[1], "=", 2)
+		if len(part) != 2 {
+			continue
+		}
+		switch part[0] {
+		case "source":
+			r.Sources = append(
+				r.Sources,
+				part[1])
+		case "target":
+			r.Targets = append(
+				r.Targets,
+				part[1])
+		}
+	}
 }
 
 //
@@ -271,7 +298,8 @@ func (r *Scope) AddOptions(options *command.Options) (err error) {
 // Rules settings.
 type Rules struct {
 	Path       string          `json:"path" binding:"required"`
-	Bundles    []api.Ref       `json:"bundles"`
+	Labels     []string        `json:"labels"`
+	RuleSets   []api.Ref       `json:"rulesets"`
 	Repository *api.Repository `json:"repository"`
 	Identity   *api.Ref        `json:"identity"`
 	Tags       struct {
@@ -330,7 +358,7 @@ func (r *Rules) addFiles(options *command.Options) (err error) {
 //
 // AddBundles adds bundles.
 func (r *Rules) addBundles(options *command.Options) (err error) {
-	for _, ref := range r.Bundles {
+	for _, ref := range r.RuleSets {
 		var ruleset *api.RuleSet
 		ruleset, err = addon.RuleSet.Get(ref.ID)
 		if err != nil {
