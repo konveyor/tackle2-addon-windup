@@ -21,7 +21,9 @@ curl -X POST ${host}/tasks -d \
             "path": "",
             "tags": {
                 "excluded": [ ]
-            }
+            },
+	    "labels": ["konveyor.io/target=cloud-readiness","konveyor.io/target=eap7"],
+	    "rulesets": [{"id":1}]
         },
         "scope": {
             "packages": {
@@ -29,10 +31,6 @@ curl -X POST ${host}/tasks -d \
                 "included": [ ]
             },
             "withKnown": false
-        },
-        "sources": [ ],
-        "targets": [
-            "cloud-readiness"
-        ]
+        }
     }
 }' | jq -M .

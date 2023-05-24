@@ -105,6 +105,7 @@ func (r *Windup) options() (options command.Options, err error) {
 		return
 	}
 	if r.Rules != nil {
+		r.xlateLabels()
 		err = r.Rules.AddOptions(&options)
 		if err != nil {
 			return
@@ -129,7 +130,33 @@ func (r *Windup) options() (options command.Options, err error) {
 	if err != nil {
 		return
 	}
+
 	return
+}
+
+//
+// xlateLabels translates labels into sources and targets.
+func (r *Windup) xlateLabels() {
+	for _, s := range r.Rules.Labels {
+		part := strings.SplitN(s, "/", 2)
+		if len(part) != 2 {
+			continue
+		}
+		part = strings.SplitN(part[1], "=", 2)
+		if len(part) != 2 {
+			continue
+		}
+		switch part[0] {
+		case "source":
+			r.Sources = append(
+				r.Sources,
+				part[1])
+		case "target":
+			r.Targets = append(
+				r.Targets,
+				part[1])
+		}
+	}
 }
 
 //
@@ -271,7 +298,8 @@ func (r *Scope) AddOptions(options *command.Options) (err error) {
 // Rules settings.
 type Rules struct {
 	Path       string          `json:"path" binding:"required"`
-	Bundles    []api.Ref       `json:"bundles"`
+	Labels     []string        `json:"labels"`
+	RuleSets   []api.Ref       `json:"rulesets"`
 	Repository *api.Repository `json:"repository"`
 	Identity   *api.Ref        `json:"identity"`
 	Tags       struct {
@@ -330,17 +358,17 @@ func (r *Rules) addFiles(options *command.Options) (err error) {
 //
 // AddBundles adds bundles.
 func (r *Rules) addBundles(options *command.Options) (err error) {
-	for _, ref := range r.Bundles {
-		var bundle *api.RuleBundle
-		bundle, err = addon.RuleBundle.Get(ref.ID)
+	for _, ref := range r.RuleSets {
+		var ruleset *api.RuleSet
+		ruleset, err = addon.RuleSet.Get(ref.ID)
 		if err != nil {
 			return
 		}
-		err = r.addRuleSets(options, bundle)
+		err = r.addRuleSets(options, ruleset)
 		if err != nil {
 			return
 		}
-		err = r.addBundleRepository(options, bundle)
+		err = r.addBundleRepository(options, ruleset)
 		if err != nil {
 			return
 		}
@@ -350,18 +378,18 @@ func (r *Rules) addBundles(options *command.Options) (err error) {
 
 //
 // addRuleSets adds ruleSets
-func (r *Rules) addRuleSets(options *command.Options, bundle *api.RuleBundle) (err error) {
+func (r *Rules) addRuleSets(options *command.Options, ruleset *api.RuleSet) (err error) {
 	ruleDir := pathlib.Join(
 		RuleDir,
-		"/bundles",
-		strconv.Itoa(int(bundle.ID)),
-		"rulesets")
+		"/rulesets",
+		strconv.Itoa(int(ruleset.ID)),
+		"rules")
 	err = nas.MkDir(ruleDir, 0755)
 	if err != nil {
 		return
 	}
 	files := 0
-	for _, ruleset := range bundle.RuleSets {
+	for _, ruleset := range ruleset.Rules {
 		fileRef := ruleset.File
 		if fileRef == nil {
 			continue
@@ -389,26 +417,26 @@ func (r *Rules) addRuleSets(options *command.Options, bundle *api.RuleBundle) (e
 
 //
 // addBundleRepository adds bundle repository.
-func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBundle) (err error) {
-	if bundle.Repository == nil {
+func (r *Rules) addBundleRepository(options *command.Options, ruleset *api.RuleSet) (err error) {
+	if ruleset.Repository == nil {
 		return
 	}
 	rootDir := pathlib.Join(
 		RuleDir,
-		"/bundles",
-		strconv.Itoa(int(bundle.ID)),
+		"/rulesets",
+		strconv.Itoa(int(ruleset.ID)),
 		"repository")
 	err = nas.MkDir(rootDir, 0755)
 	if err != nil {
 		return
 	}
 	var ids []api.Ref
-	if bundle.Identity != nil {
-		ids = []api.Ref{*bundle.Identity}
+	if ruleset.Identity != nil {
+		ids = []api.Ref{*ruleset.Identity}
 	}
 	rp, err := repository.New(
 		rootDir,
-		bundle.Repository,
+		ruleset.Repository,
 		ids)
 	if err != nil {
 		return
@@ -417,7 +445,7 @@ func (r *Rules) addBundleRepository(options *command.Options, bundle *api.RuleBu
 	if err != nil {
 		return
 	}
-	ruleDir := pathlib.Join(rootDir, bundle.Repository.Path)
+	ruleDir := pathlib.Join(rootDir, ruleset.Repository.Path)
 	options.Add(
 		"--userRulesDirectory",
 		ruleDir)
