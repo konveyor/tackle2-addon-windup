@@ -206,6 +206,7 @@ type Sources []string
 
 //
 // AddOptions add options.
+// Note: may be called with nil receiver.
 func (r Sources) AddOptions(options *command.Options) (err error) {
 	for _, source := range r {
 		options.Add("--source", source)
@@ -219,6 +220,7 @@ type Targets []string
 
 //
 // AddOptions add options.
+// Note: may be called with nil receiver.
 func (r Targets) AddOptions(options *command.Options) (err error) {
 	if len(r) == 0 {
 		err = r.addEmpty(options)
