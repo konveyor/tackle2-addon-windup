@@ -52,7 +52,7 @@ type Data struct {
 	// Scope options.
 	Scope Scope `json:"scope"`
 	// Rules options.
-	Rules *Rules `json:"rules"`
+	Rules Rules `json:"rules"`
 	// Tagger options.
 	Tagger Tagger `json:"tagger"`
 }
