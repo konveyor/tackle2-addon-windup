@@ -105,27 +105,21 @@ func (r *Windup) options() (options command.Options, err error) {
 	if err != nil {
 		return
 	}
-	if r.Rules != nil {
-		r.xlateLabels()
-		err = r.Rules.AddOptions(&options)
-		if err != nil {
-			return
-		}
-		r.Targets = append(
-			r.Targets,
-			r.Rules.foundTargets...)
+	r.translateLabels()
+	err = r.Rules.AddOptions(&options)
+	if err != nil {
+		return
 	}
-	if r.Sources != nil {
-		err = r.Sources.AddOptions(&options)
-		if err != nil {
-			return
-		}
+	r.Targets = append(
+		r.Targets,
+		r.Rules.foundTargets...)
+	err = r.Sources.AddOptions(&options)
+	if err != nil {
+		return
 	}
-	if r.Targets != nil {
-		err = r.Targets.AddOptions(&options)
-		if err != nil {
-			return
-		}
+	err = r.Targets.AddOptions(&options)
+	if err != nil {
+		return
 	}
 	err = r.Scope.AddOptions(&options)
 	if err != nil {
@@ -136,8 +130,8 @@ func (r *Windup) options() (options command.Options, err error) {
 }
 
 //
-// xlateLabels translates labels into sources and targets.
-func (r *Windup) xlateLabels() {
+// translateLabels translates labels into sources and targets.
+func (r *Windup) translateLabels() {
 	for _, s := range r.Rules.Labels {
 		part := strings.SplitN(s, "/", 2)
 		if len(part) != 2 {
@@ -212,6 +206,7 @@ type Sources []string
 
 //
 // AddOptions add options.
+// Note: may be called with nil receiver.
 func (r Sources) AddOptions(options *command.Options) (err error) {
 	for _, source := range r {
 		options.Add("--source", source)
@@ -225,6 +220,7 @@ type Targets []string
 
 //
 // AddOptions add options.
+// Note: may be called with nil receiver.
 func (r Targets) AddOptions(options *command.Options) (err error) {
 	if len(r) == 0 {
 		err = r.addEmpty(options)
