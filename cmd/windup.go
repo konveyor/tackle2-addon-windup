@@ -87,6 +87,7 @@ func (r *Windup) reportLog() {
 // options builds CLL options.
 func (r *Windup) options() (options command.Options, err error) {
 	options = command.Options{
+		"--legacyReports",
 		"--exitCodes",
 		"--batchMode",
 		"--output",
